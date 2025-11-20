@@ -1,0 +1,11 @@
+groups:
+  - name: example.rules
+    rules:
+      - alert: HighCPUInstance
+        expr: node_cpu_seconds_total{mode!="idle"} > 1000
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU detected"
+          description: "CPU usage above threshold"

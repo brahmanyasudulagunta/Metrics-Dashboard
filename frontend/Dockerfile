@@ -1,20 +1,14 @@
-# --- Base Image ---
-FROM node:20
+FROM python:3.11-slim
 
-# Set working directory
 WORKDIR /app
 
-# Copy package.json files
-COPY package*.json ./
+COPY requirements.txt .
+RUN pip install -r requirements.txt
 
-# Install deps
-RUN npm install
-
-# Copy the rest of the project
 COPY . .
 
-# Vite runs on 5173 internally
-EXPOSE 5173
+EXPOSE 8501
 
-# Start Vite dev server, allowing external connections
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+ENV BACKEND_URL=http://backend:8000
+
+CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]

@@ -1,0 +1,23 @@
+from fastapi import APIRouter, HTTPException, Depends
+from app.services.prometheus_client import PromClient
+from fastapi import BackgroundTasks
+from app.api.auth import get_current_user, create_access_token
+
+router = APIRouter()
+
+@router.post("/login")
+def login(form_data: dict):
+    # Very simple: in prod, check db
+    username = form_data.get("username")
+    password = form_data.get("password")
+    if username == "admin" and password == "admin":
+        token = create_access_token({"sub": username})
+        return {"access_token": token, "token_type": "bearer"}
+    raise HTTPException(status_code=401, detail="Invalid credentials")
+
+@router.get("/metrics/cpu")
+def cpu_over_time(q: str = 'avg(rate(node_cpu_seconds_total{mode!="idle"}[5m]))'):
+    # returns query result from Prometheus
+    client = PromClient()
+    return client.query_range(q)
+

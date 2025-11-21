@@ -50,7 +50,7 @@ services:
   frontend:
     build: ../frontend
     ports:
-      - "3001:5173"
+      - "3001:8501"
     depends_on:
       - backend
 

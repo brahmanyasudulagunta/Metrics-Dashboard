@@ -11,11 +11,14 @@ def show_chart(data, title):
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=times, y=values, mode="lines"))
+
     fig.update_layout(
         title=title,
         xaxis_title="Time",
         yaxis_title="Value",
         height=300
     )
+
+    fig.update_yaxes(range=[0, 100])   # force 0–100
 
     st.plotly_chart(fig, use_container_width=True)

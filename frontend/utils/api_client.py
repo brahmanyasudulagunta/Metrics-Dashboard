@@ -4,54 +4,121 @@ from datetime import datetime
 
 BACKEND = os.getenv("BACKEND_URL", "http://localhost:8000")
 
-def format_series(values):
-    return [
-        {"t": datetime.fromtimestamp(v[0]), "v": float(v[1])}
-        for v in values
-    ]
 
+# ------------------------
+# UNIT CONVERSION (bytes → KB/MB/GB)
+# ------------------------
+def convert_bytes(value):
+    value = float(value)
+    if value < 1024:
+        return value, "B/s"
+    elif value < 1024 ** 2:
+        return value / 1024, "KB/s"
+    elif value < 1024 ** 3:
+        return value / (1024 ** 2), "MB/s"
+    else:
+        return value / (1024 ** 3), "GB/s"
+
+
+# ------------------------
+# MAIN FORMAT FUNCTION
+# ------------------------
+def format_series(values, unit=None, convert=False):
+    formatted = []
+
+    for ts, val in values:
+        val = float(val)
+
+        if convert:
+            new_val, new_unit = convert_bytes(val)
+            formatted.append({
+                "t": datetime.fromtimestamp(ts),
+                "v": new_val,
+                "unit": new_unit
+            })
+        else:
+            formatted.append({
+                "t": datetime.fromtimestamp(ts),
+                "v": val,
+                "unit": unit
+            })
+
+    return formatted
+
+
+# ------------------------
+# CPU (%)
+# ------------------------
 def fetch_cpu():
     try:
         r = requests.get(f"{BACKEND}/api/metrics/cpu")
         res = r.json()
         pts = res["data"]["result"][0]["values"]
-        return format_series(pts)
-    except:
+        return format_series(pts, unit="%")
+    except Exception as e:
+        print("CPU error:", e)
         return []
 
+
+# ------------------------
+# MEMORY (%)
+# ------------------------
 def fetch_memory():
     try:
         r = requests.get(f"{BACKEND}/api/metrics/memory")
         res = r.json()
         pts = res["data"]["result"][0]["values"]
-        return format_series(pts)
-    except:
+        return format_series(pts, unit="%")
+    except Exception as e:
+        print("Memory error:", e)
         return []
 
+
+# ------------------------
+# DISK (%)
+# ------------------------
 def fetch_disk():
     try:
         r = requests.get(f"{BACKEND}/api/metrics/disk")
         res = r.json()
         pts = res["data"]["result"][0]["values"]
-        return format_series(pts)
-    except:
+        return format_series(pts, unit="%")
+    except Exception as e:
+        print("Disk error:", e)
         return []
 
-def fetch_network():
+
+# ------------------------
+# NETWORK RX (converted bytes → MB/s, etc.)
+# ------------------------
+def fetch_network_rx():
     try:
-        r = requests.get(f"{BACKEND}/api/metrics/network")
+        r = requests.get(f"{BACKEND}/api/metrics/network_rx")
         res = r.json()
+        values = res["data"]["result"][0]["values"]
+        return format_series(values, convert=True)
+    except Exception as e:
+        print("Network RX error:", e)
+        return []
 
-        rx = [x for x in res["data"]["result"] if x["metric"].get("name") == "network_rx"]
-        tx = [x for x in res["data"]["result"] if x["metric"].get("name") == "network_tx"]
 
-        rx_vals = format_series(rx[0]["values"]) if rx else []
-        tx_vals = format_series(tx[0]["values"]) if tx else []
+# ------------------------
+# NETWORK TX (converted bytes → MB/s, etc.)
+# ------------------------
+def fetch_network_tx():
+    try:
+        r = requests.get(f"{BACKEND}/api/metrics/network_tx")
+        res = r.json()
+        values = res["data"]["result"][0]["values"]
+        return format_series(values, convert=True)
+    except Exception as e:
+        print("Network TX error:", e)
+        return []
 
-        return rx_vals, tx_vals
-    except:
-        return [], []
 
+# ------------------------
+# CONTAINERS
+# ------------------------
 def fetch_containers():
     try:
         r = requests.get(f"{BACKEND}/api/metrics/containers")
@@ -64,5 +131,6 @@ def fetch_containers():
                 "values": format_series(container["values"])
             })
         return formatted
-    except:
+    except Exception as e:
+        print("Container error:", e)
         return []

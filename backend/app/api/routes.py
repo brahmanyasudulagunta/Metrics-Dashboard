@@ -44,7 +44,12 @@ def memory_usage():
 # ---------------------
 @router.get("/metrics/disk")
 def disk_usage():
-    q = '(1 - (node_filesystem_free_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})) * 100'
+    q = """
+    100 - (
+        node_filesystem_free_bytes{fstype!~"tmpfs|fuse.lxcfs|overlay"} /
+        node_filesystem_size_bytes{fstype!~"tmpfs|fuse.lxcfs|overlay"} * 100
+    )
+    """
     return client.query_range_result_like_prom(q)
 
 
@@ -53,7 +58,7 @@ def disk_usage():
 # ---------------------
 @router.get("/metrics/network_rx")
 def network_rx():
-    q = 'irate(node_network_receive_bytes_total[1m])'
+    q = 'irate(node_network_receive_bytes_total{device!="lo"}[1m])'
     return client.query_range_result_like_prom(q)
 
 
@@ -62,7 +67,7 @@ def network_rx():
 # ---------------------
 @router.get("/metrics/network_tx")
 def network_tx():
-    q = 'irate(node_network_transmit_bytes_total[1m])'
+    q = 'irate(node_network_transmit_bytes_total{device!="lo"}[1m])'
     return client.query_range_result_like_prom(q)
 
 

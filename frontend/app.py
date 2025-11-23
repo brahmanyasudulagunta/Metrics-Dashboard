@@ -1,7 +1,7 @@
 import streamlit as st
 from utils.api_client import (
     fetch_cpu, fetch_memory, fetch_disk,
-    fetch_network, fetch_containers
+    fetch_network_rx, fetch_network_tx, fetch_containers
 )
 from components.chart_panel import show_chart
 from components.sidebar import sidebar_menu
@@ -25,8 +25,10 @@ disk_data = fetch_disk()
 show_chart(disk_data, "Disk Usage (%)")
 
 # Network
-rx_data, tx_data = fetch_network()
+rx_data = fetch_network_rx()
 show_chart(rx_data, "Network RX (bytes/s)")
+
+tx_data = fetch_network_tx()
 show_chart(tx_data, "Network TX (bytes/s)")
 
 # Containers

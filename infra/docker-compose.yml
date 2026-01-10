@@ -40,6 +40,8 @@ services:
 
   backend:
     build: ../backend
+    volumes:
+      - ./data:/app/data
     env_file:
       - ../backend/.env.example
     ports:

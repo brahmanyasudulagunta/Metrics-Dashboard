@@ -1,4 +1,5 @@
 import streamlit as st
+from auth_ui import login_ui, signup_ui
 from utils.api_client import (
     fetch_cpu, fetch_memory, fetch_disk,
     fetch_network_rx, fetch_network_tx, fetch_containers
@@ -6,8 +7,37 @@ from utils.api_client import (
 from components.chart_panel import show_chart
 from components.sidebar import sidebar_menu
 
+# ---------------------------
+# PAGE CONFIG (ALWAYS FIRST)
+# ---------------------------
 st.set_page_config(page_title="DevOps Monitoring Dashboard", layout="wide")
 
+# ---------------------------
+# AUTH SESSION INIT (ADD HERE)
+# ---------------------------
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+if "token" not in st.session_state:
+    st.session_state.token = None
+
+# ---------------------------
+# AUTH GATE (ADD HERE)
+# ---------------------------
+if not st.session_state.logged_in:
+    st.title("🔐 DevOps Dashboard Login")
+
+    tab1, tab2 = st.tabs(["Login", "Signup"])
+    with tab1:
+        login_ui()
+    with tab2:
+        signup_ui()
+
+    st.stop()   # ⛔ stop dashboard loading
+
+# ---------------------------
+# DASHBOARD (ONLY AFTER LOGIN)
+# ---------------------------
 sidebar_menu()
 
 st.title("📊 DevOps Monitoring Dashboard (Streamlit)")

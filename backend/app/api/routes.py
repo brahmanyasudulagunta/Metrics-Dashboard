@@ -2,23 +2,12 @@ from fastapi import APIRouter, HTTPException
 from app.services.prometheus_client import PromClient
 from app.api.auth import create_access_token
 from fastapi import BackgroundTasks
+from app.db.database import SessionLocal
+from app.db.models import User
+from app.api.security import hash_password, verify_password
 
 router = APIRouter()
 client = PromClient()
-
-# ---------------------
-# LOGIN
-# ---------------------
-@router.post("/login")
-def login(form_data: dict):
-    username = form_data.get("username")
-    password = form_data.get("password")
-
-    if username == "admin" and password == "admin":
-        token = create_access_token({"sub": username})
-        return {"access_token": token, "token_type": "bearer"}
-
-    raise HTTPException(status_code=401, detail="Invalid credentials")
 
 
 # ---------------------
@@ -78,3 +67,39 @@ def network_tx():
 def container_count():
     q = 'count(container_memory_usage_bytes)'
     return client.query_range_result_like_prom(q)
+
+
+@router.post("/signup")
+def signup(data: dict):
+    db = SessionLocal()
+    username = data.get("username")
+    password = data.get("password")
+
+    if not username or not password:
+        raise HTTPException(status_code=400, detail="Missing fields")
+
+    if db.query(User).filter(User.username == username).first():
+        raise HTTPException(status_code=400, detail="User already exists")
+
+    user = User(
+        username=username,
+        hashed_password=hash_password(password)
+    )
+    db.add(user)
+    db.commit()
+
+    return {"message": "User created successfully"}
+
+@router.post("/login")
+def login(data: dict):
+    db = SessionLocal()
+    username = data.get("username")
+    password = data.get("password")
+
+    user = db.query(User).filter(User.username == username).first()
+
+    if not user or not verify_password(password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    token = create_access_token({"sub": username})
+    return {"access_token": token, "token_type": "bearer"}

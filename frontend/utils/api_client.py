@@ -2,8 +2,14 @@ import os
 import requests
 from datetime import datetime
 
+
 BACKEND = os.getenv("BACKEND_URL", "http://localhost:8000")
 
+def auth_headers():
+    token = st.session_state.get("token")
+    if token:
+        return {"Authorization": f"Bearer {token}"}
+    return {}
 
 # ------------------------
 # UNIT CONVERSION (bytes → KB/MB/GB)
@@ -51,7 +57,7 @@ def format_series(values, unit=None, convert=False):
 # ------------------------
 def fetch_cpu():
     try:
-        r = requests.get(f"{BACKEND}/api/metrics/cpu")
+        r = requests.get(f"{BACKEND}/api/metrics/cpu", headers=auth_headers())
         res = r.json()
         pts = res["data"]["result"][0]["values"]
         return format_series(pts, unit="%")
@@ -65,7 +71,7 @@ def fetch_cpu():
 # ------------------------
 def fetch_memory():
     try:
-        r = requests.get(f"{BACKEND}/api/metrics/memory")
+        r = requests.get(f"{BACKEND}/api/metrics/memory", headers=auth_headers())
         res = r.json()
         pts = res["data"]["result"][0]["values"]
         return format_series(pts, unit="%")
@@ -79,7 +85,7 @@ def fetch_memory():
 # ------------------------
 def fetch_disk():
     try:
-        r = requests.get(f"{BACKEND}/api/metrics/disk")
+        r = requests.get(f"{BACKEND}/api/metrics/disk", headers=auth_headers())
         res = r.json()
         pts = res["data"]["result"][0]["values"]
         return format_series(pts, unit="%")
@@ -93,7 +99,7 @@ def fetch_disk():
 # ------------------------
 def fetch_network_rx():
     try:
-        r = requests.get(f"{BACKEND}/api/metrics/network_rx")
+        r = requests.get(f"{BACKEND}/api/metrics/network_rx", headers=auth_headers())
         res = r.json()
         values = res["data"]["result"][0]["values"]
         return format_series(values, convert=True)
@@ -107,7 +113,7 @@ def fetch_network_rx():
 # ------------------------
 def fetch_network_tx():
     try:
-        r = requests.get(f"{BACKEND}/api/metrics/network_tx")
+        r = requests.get(f"{BACKEND}/api/metrics/network_tx", headers=auth_headers())
         res = r.json()
         values = res["data"]["result"][0]["values"]
         return format_series(values, convert=True)
@@ -121,7 +127,7 @@ def fetch_network_tx():
 # ------------------------
 def fetch_containers():
     try:
-        r = requests.get(f"{BACKEND}/api/metrics/containers")
+        r = requests.get(f"{BACKEND}/api/metrics/containers", headers=auth_headers())
         res = r.json()
 
         formatted = []
@@ -134,3 +140,4 @@ def fetch_containers():
     except Exception as e:
         print("Container error:", e)
         return []
+

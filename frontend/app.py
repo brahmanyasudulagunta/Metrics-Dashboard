@@ -97,10 +97,37 @@ with tab2:
         show_chart(tx_data, "Network TX (bytes/s)")
 
 with tab3:
-    st.info("Container metrics - coming soon")
+    st.markdown("### Containers")
     container_metrics = fetch_containers()
-    if container_metrics:
-        for container in container_metrics:
-            show_chart(container["values"], f"Container CPU: {container['name']}")
-    else:
+
+    # Helper: human-readable bytes
+    def human_readable_bytes(n):
+        try:
+            n = float(n)
+        except Exception:
+            return "-"
+        for unit in ["B", "KB", "MB", "GB", "TB"]:
+            if abs(n) < 1024.0:
+                return f"{n:3.1f} {unit}"
+            n /= 1024.0
+        return f"{n:.1f} PB"
+
+    if not container_metrics:
         st.warning("No container data available")
+    else:
+        total = len(container_metrics)
+        st.metric("Total containers", str(total))
+
+        # Build a simple table: Name | Has Data | Latest Memory
+        rows = []
+        for c in container_metrics:
+            name = c.get("name") or "Unknown"
+            values = c.get("values") or []
+            latest = values[-1]["v"] if values else None
+            rows.append({
+                "Name": name,
+                "Has data": "Yes" if latest is not None else "No",
+                "Latest (mem)": human_readable_bytes(latest) if latest is not None else "-"
+            })
+
+        st.table(rows)

@@ -1,5 +1,6 @@
 import streamlit as st
 import plotly.graph_objects as go
+import uuid
 
 def show_chart(data, title):
     if not data:
@@ -38,7 +39,9 @@ def show_chart(data, title):
     if "%" in title:
         fig.update_yaxes(range=[0, 100])
 
-    st.plotly_chart(fig, use_container_width=True)
+    # Use a unique key for each chart to avoid StreamlitDuplicateElementId
+    unique_key = f"{title.replace(' ', '_')}-{uuid.uuid4().hex}"
+    st.plotly_chart(fig, use_container_width=True, key=unique_key)
     
     # Show stats below chart
     stat_col1, stat_col2, stat_col3 = st.columns(3)

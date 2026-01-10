@@ -6,11 +6,12 @@ from utils.api_client import (
 )
 from components.chart_panel import show_chart
 from components.sidebar import sidebar_menu
+import time
 
 # ---------------------------
 # PAGE CONFIG (ALWAYS FIRST)
 # ---------------------------
-st.set_page_config(page_title="DevOps Monitoring Dashboard", layout="wide")
+st.set_page_config(page_title="DevOps Monitoring Dashboard", layout="wide", initial_sidebar_state="expanded")
 
 # ---------------------------
 # AUTH SESSION INIT (ADD HERE)
@@ -40,28 +41,66 @@ if not st.session_state.logged_in:
 # ---------------------------
 sidebar_menu()
 
-st.title("📊 DevOps Monitoring Dashboard (Streamlit)")
+st.title("📊 DevOps Monitoring Dashboard")
 
-# CPU
-cpu_data = fetch_cpu()
-show_chart(cpu_data, "CPU (avg rate)")
+# Add refresh button and last update time
+col1, col2 = st.columns([4, 1])
+with col1:
+    st.markdown("### System Metrics")
+with col2:
+    if st.button("🔄 Refresh"):
+        st.rerun()
 
-# Memory
-mem_data = fetch_memory()
-show_chart(mem_data, "Memory Usage (%)")
+# Fetch all data
+with st.spinner("⏳ Loading metrics..."):
+    cpu_data = fetch_cpu()
+    mem_data = fetch_memory()
+    disk_data = fetch_disk()
+    rx_data = fetch_network_rx()
+    tx_data = fetch_network_tx()
 
-# Disk
-disk_data = fetch_disk()
-show_chart(disk_data, "Disk Usage (%)")
+# Display metric cards with current values
+st.markdown("#### Key Metrics")
+metric_col1, metric_col2, metric_col3 = st.columns(3)
 
-# Network
-rx_data = fetch_network_rx()
-show_chart(rx_data, "Network RX (bytes/s)")
+with metric_col1:
+    cpu_val = cpu_data[-1]["v"] if cpu_data else 0
+    st.metric("🔴 CPU Usage", f"{cpu_val:.1f}%", delta=None)
 
-tx_data = fetch_network_tx()
-show_chart(tx_data, "Network TX (bytes/s)")
+with metric_col2:
+    mem_val = mem_data[-1]["v"] if mem_data else 0
+    st.metric("💾 Memory Usage", f"{mem_val:.1f}%", delta=None)
 
-# Containers
-container_metrics = fetch_containers()
-for container in container_metrics:
-    show_chart(container["values"], f"Container CPU: {container['name']}")
+with metric_col3:
+    disk_val = disk_data[-1]["v"] if disk_data else 0
+    st.metric("💿 Disk Usage", f"{disk_val:.1f}%", delta=None)
+
+# Display charts in tabs
+tab1, tab2, tab3 = st.tabs(["System", "Network", "Containers"])
+
+with tab1:
+    col1, col2 = st.columns(2)
+    with col1:
+        show_chart(cpu_data, "CPU (avg rate)")
+    with col2:
+        show_chart(mem_data, "Memory Usage (%)")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        show_chart(disk_data, "Disk Usage (%)")
+
+with tab2:
+    col1, col2 = st.columns(2)
+    with col1:
+        show_chart(rx_data, "Network RX (bytes/s)")
+    with col2:
+        show_chart(tx_data, "Network TX (bytes/s)")
+
+with tab3:
+    st.info("Container metrics - coming soon")
+    container_metrics = fetch_containers()
+    if container_metrics:
+        for container in container_metrics:
+            show_chart(container["values"], f"Container CPU: {container['name']}")
+    else:
+        st.warning("No container data available")

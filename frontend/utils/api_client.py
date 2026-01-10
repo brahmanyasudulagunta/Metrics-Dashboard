@@ -1,5 +1,6 @@
 import os
 import requests
+import streamlit as st
 from datetime import datetime
 
 
@@ -132,9 +133,15 @@ def fetch_containers():
 
         formatted = []
         for container in res["data"]["result"]:
+            # Extract container name from metric labels
+            container_name = container.get("metric", {}).get("container_name", "Unknown")
+            if container_name == "Unknown":
+                # Try alternative label names
+                container_name = container.get("metric", {}).get("pod_name") or container.get("metric", {}).get("name") or "Unknown"
+            
             formatted.append({
-                "name": container["metric"]["container_name"],
-                "values": format_series(container["values"])
+                "name": container_name,
+                "values": format_series(container["values"], unit="bytes")
             })
         return formatted
     except Exception as e:

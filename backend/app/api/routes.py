@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from app.services.prometheus_client import PromClient
-from app.api.auth import create_access_token
+from app.api.auth import create_access_token, get_current_user
 from fastapi import BackgroundTasks
 from app.db.database import SessionLocal
 from app.db.models import User
@@ -14,7 +14,7 @@ client = PromClient()
 # CPU USAGE
 # ---------------------
 @router.get("/metrics/cpu")
-def cpu_usage():
+def cpu_usage(current_user: str = Depends(get_current_user)):
     q = '100 - (avg by(instance)(irate(node_cpu_seconds_total{mode="idle"}[1m])) * 100)'
     return client.query_range_result_like_prom(q)
 
@@ -23,7 +23,7 @@ def cpu_usage():
 # MEMORY USAGE
 # ---------------------
 @router.get("/metrics/memory")
-def memory_usage():
+def memory_usage(current_user: str = Depends(get_current_user)):
     q = '(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100'
     return client.query_range_result_like_prom(q)
 
@@ -32,7 +32,7 @@ def memory_usage():
 # DISK USAGE
 # ---------------------
 @router.get("/metrics/disk")
-def disk_usage():
+def disk_usage(current_user: str = Depends(get_current_user)):
     q = """
     100 - (
         node_filesystem_free_bytes{fstype!~"tmpfs|fuse.lxcfs|overlay"} /
@@ -46,7 +46,7 @@ def disk_usage():
 # NETWORK RX
 # ---------------------
 @router.get("/metrics/network_rx")
-def network_rx():
+def network_rx(current_user: str = Depends(get_current_user)):
     q = 'irate(node_network_receive_bytes_total{device!="lo"}[1m])'
     return client.query_range_result_like_prom(q)
 
@@ -55,17 +55,17 @@ def network_rx():
 # NETWORK TX
 # ---------------------
 @router.get("/metrics/network_tx")
-def network_tx():
+def network_tx(current_user: str = Depends(get_current_user)):
     q = 'irate(node_network_transmit_bytes_total{device!="lo"}[1m])'
     return client.query_range_result_like_prom(q)
 
 
 # ---------------------
-# CONTAINER COUNT (cAdvisor)
+# CONTAINER MEMORY (cAdvisor)
 # ---------------------
 @router.get("/metrics/containers")
-def container_count():
-    q = 'count(container_memory_usage_bytes)'
+def container_count(current_user: str = Depends(get_current_user)):
+    q = 'container_memory_usage_bytes'
     return client.query_range_result_like_prom(q)
 
 

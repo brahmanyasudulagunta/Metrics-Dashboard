@@ -15,14 +15,6 @@ def create_access_token(data: dict):
     encoded = jwt.encode(to_encode, SECRET, algorithm=ALGO)
     return encoded
 
-def get_current_user(token: str = None):
-    # Placeholder: FastAPI dependency is recommended
-    try:
-        payload = jwt.decode(token, SECRET, algorithms=[ALGO])
-        return payload.get("sub")
-    except Exception:
-        return None
-
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
 

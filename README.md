@@ -64,10 +64,12 @@ Implemented GitOps‑based delivery using **ArgoCD**
 
 ---
 
-### 🔹 Workflow Automation Engine (n8n‑like)
-Built a workflow execution engine using **FastAPI**  
-✔ HTTP → HTTP workflow automation  
-✔ Node execution, logging, UI integration  
+### 🔹 DevPlatform – Internal Developer Platform (IDP)
+A platform engineering solution designed to streamline developer workflows  
+✔ Self-service environment provisioning  
+✔ Automated CI/CD pipelines  
+✔ Centralized observability & GitOps-driven operations  
+✔ Built to improve developer productivity and platform reliability  
 
 ---
 

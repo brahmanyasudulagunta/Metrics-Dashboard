@@ -122,29 +122,3 @@ def fetch_network_tx():
         print("Network TX error:", e)
         return []
 
-
-# ------------------------
-# CONTAINERS
-# ------------------------
-def fetch_containers():
-    try:
-        r = requests.get(f"{BACKEND}/api/metrics/containers", headers=auth_headers())
-        res = r.json()
-
-        formatted = []
-        for container in res["data"]["result"]:
-            # Extract container name from metric labels
-            container_name = container.get("metric", {}).get("container_name", "Unknown")
-            if container_name == "Unknown":
-                # Try alternative label names
-                container_name = container.get("metric", {}).get("pod_name") or container.get("metric", {}).get("name") or "Unknown"
-            
-            formatted.append({
-                "name": container_name,
-                "values": format_series(container["values"], unit="bytes")
-            })
-        return formatted
-    except Exception as e:
-        print("Container error:", e)
-        return []
-

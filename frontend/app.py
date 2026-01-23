@@ -2,7 +2,7 @@ import streamlit as st
 from auth_ui import login_ui, signup_ui
 from utils.api_client import (
     fetch_cpu, fetch_memory, fetch_disk,
-    fetch_network_rx, fetch_network_tx, fetch_containers
+    fetch_network_rx, fetch_network_tx
 )
 from components.chart_panel import show_chart
 from components.sidebar import sidebar_menu
@@ -76,7 +76,7 @@ with metric_col3:
     st.metric("💿 Disk Usage", f"{disk_val:.1f}%", delta=None)
 
 # Display charts in tabs
-tab1, tab2, tab3 = st.tabs(["System", "Network", "Containers"])
+tab1, tab2 = st.tabs(["System", "Network"])
 
 with tab1:
     col1, col2 = st.columns(2)
@@ -95,39 +95,3 @@ with tab2:
         show_chart(rx_data, "Network RX (bytes/s)")
     with col2:
         show_chart(tx_data, "Network TX (bytes/s)")
-
-with tab3:
-    st.markdown("### Containers")
-    container_metrics = fetch_containers()
-
-    # Helper: human-readable bytes
-    def human_readable_bytes(n):
-        try:
-            n = float(n)
-        except Exception:
-            return "-"
-        for unit in ["B", "KB", "MB", "GB", "TB"]:
-            if abs(n) < 1024.0:
-                return f"{n:3.1f} {unit}"
-            n /= 1024.0
-        return f"{n:.1f} PB"
-
-    if not container_metrics:
-        st.warning("No container data available")
-    else:
-        total = len(container_metrics)
-        st.metric("Total containers", str(total))
-
-        # Build a simple table: Name | Has Data | Latest Memory
-        rows = []
-        for c in container_metrics:
-            name = c.get("name") or "Unknown"
-            values = c.get("values") or []
-            latest = values[-1]["v"] if values else None
-            rows.append({
-                "Name": name,
-                "Has data": "Yes" if latest is not None else "No",
-                "Latest (mem)": human_readable_bytes(latest) if latest is not None else "-"
-            })
-
-        st.table(rows)

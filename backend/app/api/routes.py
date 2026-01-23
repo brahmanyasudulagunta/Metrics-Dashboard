@@ -5,9 +5,18 @@ from fastapi import BackgroundTasks
 from app.db.database import SessionLocal
 from app.db.models import User
 from app.api.security import hash_password, verify_password
+from pydantic import BaseModel
 
 router = APIRouter()
 client = PromClient()
+
+class SignupRequest(BaseModel):
+    username: str
+    password: str
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
 
 
 # ---------------------
@@ -63,17 +72,11 @@ def network_tx(current_user: str = Depends(get_current_user)):
 # ---------------------
 # CONTAINER MEMORY (cAdvisor)
 # ---------------------
-@router.get("/metrics/containers")
-def container_count(current_user: str = Depends(get_current_user)):
-    q = 'container_memory_usage_bytes'
-    return client.query_range_result_like_prom(q)
-
-
 @router.post("/signup")
-def signup(data: dict):
+def signup(data: SignupRequest):
     db = SessionLocal()
-    username = data.get("username")
-    password = data.get("password")
+    username = data.username
+    password = data.password
 
     if not username or not password:
         raise HTTPException(status_code=400, detail="Missing fields")
@@ -91,10 +94,10 @@ def signup(data: dict):
     return {"message": "User created successfully"}
 
 @router.post("/login")
-def login(data: dict):
+def login(data: LoginRequest):
     db = SessionLocal()
-    username = data.get("username")
-    password = data.get("password")
+    username = data.username
+    password = data.password
 
     user = db.query(User).filter(User.username == username).first()
 

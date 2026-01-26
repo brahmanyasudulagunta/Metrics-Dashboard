@@ -25,6 +25,46 @@ interface SystemInfo {
   processesBlocked: number;
 }
 
+// Helper function to format bytes to human-readable units
+const formatBytes = (bytes: number): string => {
+  if (bytes === 0) return '0 B/s';
+  const k = 1024;
+  const sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+  const i = Math.floor(Math.log(Math.abs(bytes)) / Math.log(k));
+  const index = Math.min(i, sizes.length - 1);
+  return `${(bytes / Math.pow(k, index)).toFixed(2)} ${sizes[index]}`;
+};
+
+// Custom tooltip for percentage charts
+const PercentageTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <Paper sx={{ p: 1.5 }}>
+        <Typography variant="body2" fontWeight="bold">{label}</Typography>
+        <Typography variant="body2" color="primary">
+          {payload[0].value.toFixed(2)}%
+        </Typography>
+      </Paper>
+    );
+  }
+  return null;
+};
+
+// Custom tooltip for network charts
+const NetworkTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <Paper sx={{ p: 1.5 }}>
+        <Typography variant="body2" fontWeight="bold">{label}</Typography>
+        <Typography variant="body2" color="primary">
+          {formatBytes(payload[0].value)}
+        </Typography>
+      </Paper>
+    );
+  }
+  return null;
+};
+
 const Dashboard: React.FC = () => {
   const [cpuData, setCpuData] = useState<MetricData[]>([]);
   const [memData, setMemData] = useState<MetricData[]>([]);
@@ -104,6 +144,18 @@ const Dashboard: React.FC = () => {
 
   const getCurrentValue = (data: MetricData[]) => data.length > 0 ? data[data.length - 1].value : 0;
 
+  // Y-axis tick formatter for percentage
+  const formatPercent = (value: number) => `${value}%`;
+
+  // Y-axis tick formatter for network (auto-scale)
+  const formatNetworkTick = (value: number) => {
+    if (value === 0) return '0';
+    const k = 1024;
+    if (value < k) return `${value.toFixed(0)}B`;
+    if (value < k * k) return `${(value / k).toFixed(0)}K`;
+    return `${(value / (k * k)).toFixed(1)}M`;
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -178,7 +230,7 @@ const Dashboard: React.FC = () => {
           <Card sx={{ flex: '1 1 200px', transition: '0.3s', '&:hover': { boxShadow: 6 } }}>
             <CardContent>
               <Typography color="textSecondary" gutterBottom>📡 Network RX</Typography>
-              <Typography variant="h5">{getCurrentValue(rxData).toFixed(2)} B/s</Typography>
+              <Typography variant="h5">{formatBytes(getCurrentValue(rxData))}</Typography>
             </CardContent>
           </Card>
         </Box>
@@ -198,41 +250,41 @@ const Dashboard: React.FC = () => {
               {tabValue === 0 && (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
                   <Box sx={{ flex: '1 1 45%', minWidth: 300 }}>
-                    <Typography variant="h6" gutterBottom>CPU Usage</Typography>
+                    <Typography variant="h6" gutterBottom>CPU Usage (%)</Typography>
                     <ResponsiveContainer width="100%" height={300}>
                       <LineChart data={cpuData}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="time" />
-                        <YAxis />
-                        <Tooltip />
+                        <YAxis tickFormatter={formatPercent} domain={[0, 100]} />
+                        <Tooltip content={<PercentageTooltip />} />
                         <Legend />
-                        <Line type="monotone" dataKey="value" stroke="#8884d8" strokeWidth={2} />
+                        <Line type="monotone" dataKey="value" name="CPU %" stroke="#8884d8" strokeWidth={2} dot={false} />
                       </LineChart>
                     </ResponsiveContainer>
                   </Box>
                   <Box sx={{ flex: '1 1 45%', minWidth: 300 }}>
-                    <Typography variant="h6" gutterBottom>Memory Usage</Typography>
+                    <Typography variant="h6" gutterBottom>Memory Usage (%)</Typography>
                     <ResponsiveContainer width="100%" height={300}>
                       <LineChart data={memData}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="time" />
-                        <YAxis />
-                        <Tooltip />
+                        <YAxis tickFormatter={formatPercent} domain={[0, 100]} />
+                        <Tooltip content={<PercentageTooltip />} />
                         <Legend />
-                        <Line type="monotone" dataKey="value" stroke="#82ca9d" strokeWidth={2} />
+                        <Line type="monotone" dataKey="value" name="Memory %" stroke="#82ca9d" strokeWidth={2} dot={false} />
                       </LineChart>
                     </ResponsiveContainer>
                   </Box>
                   <Box sx={{ flex: '1 1 100%', minWidth: 300 }}>
-                    <Typography variant="h6" gutterBottom>Disk Usage</Typography>
+                    <Typography variant="h6" gutterBottom>Disk Usage (%)</Typography>
                     <ResponsiveContainer width="100%" height={300}>
                       <LineChart data={diskData}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="time" />
-                        <YAxis />
-                        <Tooltip />
+                        <YAxis tickFormatter={formatPercent} domain={[0, 100]} />
+                        <Tooltip content={<PercentageTooltip />} />
                         <Legend />
-                        <Line type="monotone" dataKey="value" stroke="#ffc658" strokeWidth={2} />
+                        <Line type="monotone" dataKey="value" name="Disk %" stroke="#ffc658" strokeWidth={2} dot={false} />
                       </LineChart>
                     </ResponsiveContainer>
                   </Box>
@@ -241,28 +293,28 @@ const Dashboard: React.FC = () => {
               {tabValue === 1 && (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
                   <Box sx={{ flex: '1 1 45%', minWidth: 300 }}>
-                    <Typography variant="h6" gutterBottom>Network RX</Typography>
+                    <Typography variant="h6" gutterBottom>Network Receive (Throughput)</Typography>
                     <ResponsiveContainer width="100%" height={300}>
                       <LineChart data={rxData}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="time" />
-                        <YAxis />
-                        <Tooltip />
+                        <YAxis tickFormatter={formatNetworkTick} />
+                        <Tooltip content={<NetworkTooltip />} />
                         <Legend />
-                        <Line type="monotone" dataKey="value" stroke="#ff7300" strokeWidth={2} />
+                        <Line type="monotone" dataKey="value" name="RX" stroke="#ff7300" strokeWidth={2} dot={false} />
                       </LineChart>
                     </ResponsiveContainer>
                   </Box>
                   <Box sx={{ flex: '1 1 45%', minWidth: 300 }}>
-                    <Typography variant="h6" gutterBottom>Network TX</Typography>
+                    <Typography variant="h6" gutterBottom>Network Transmit (Throughput)</Typography>
                     <ResponsiveContainer width="100%" height={300}>
                       <LineChart data={txData}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="time" />
-                        <YAxis />
-                        <Tooltip />
+                        <YAxis tickFormatter={formatNetworkTick} />
+                        <Tooltip content={<NetworkTooltip />} />
                         <Legend />
-                        <Line type="monotone" dataKey="value" stroke="#00ff00" strokeWidth={2} />
+                        <Line type="monotone" dataKey="value" name="TX" stroke="#00c853" strokeWidth={2} dot={false} />
                       </LineChart>
                     </ResponsiveContainer>
                   </Box>

@@ -69,6 +69,56 @@ def network_tx(current_user: str = Depends(get_current_user)):
     return client.query_range_for_chart(q)
 
 
+# ---------------------
+# SYSTEM UPTIME
+# ---------------------
+@router.get("/metrics/uptime")
+def system_uptime(current_user: str = Depends(get_current_user)):
+    q = 'node_time_seconds - node_boot_time_seconds'
+    try:
+        res = client.query(q)
+        uptime_seconds = float(res["data"]["result"][0]["value"][1])
+        days = int(uptime_seconds // 86400)
+        hours = int((uptime_seconds % 86400) // 3600)
+        minutes = int((uptime_seconds % 3600) // 60)
+        return {"uptime": f"{days}d {hours}h {minutes}m", "seconds": uptime_seconds}
+    except Exception:
+        return {"uptime": "N/A", "seconds": 0}
+
+
+# ---------------------
+# LOAD AVERAGE
+# ---------------------
+@router.get("/metrics/load")
+def load_average(current_user: str = Depends(get_current_user)):
+    try:
+        load1 = client.query('node_load1')["data"]["result"][0]["value"][1]
+        load5 = client.query('node_load5')["data"]["result"][0]["value"][1]
+        load15 = client.query('node_load15')["data"]["result"][0]["value"][1]
+        return {
+            "load1": round(float(load1), 2),
+            "load5": round(float(load5), 2),
+            "load15": round(float(load15), 2)
+        }
+    except Exception:
+        return {"load1": 0, "load5": 0, "load15": 0}
+
+
+# ---------------------
+# PROCESS COUNT
+# ---------------------
+@router.get("/metrics/processes")
+def process_count(current_user: str = Depends(get_current_user)):
+    try:
+        res = client.query('node_procs_running')
+        running = int(float(res["data"]["result"][0]["value"][1]))
+        res_blocked = client.query('node_procs_blocked')
+        blocked = int(float(res_blocked["data"]["result"][0]["value"][1]))
+        return {"running": running, "blocked": blocked, "total": running + blocked}
+    except Exception:
+        return {"running": 0, "blocked": 0, "total": 0}
+
+
 @router.post("/signup")
 def signup(data: SignupRequest):
     db = SessionLocal()

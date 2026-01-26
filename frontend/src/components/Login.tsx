@@ -61,7 +61,7 @@ const Login: React.FC<LoginProps> = ({ setAuth }) => {
           <Button
             fullWidth
             variant="outlined"
-            onClick={() => window.location.href = '/signup'}
+            onClick={() => navigate('/signup')}
           >
             Don't have an account? Sign Up
           </Button>

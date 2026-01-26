@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { TextField, Button, Container, Typography, Paper, Box, Alert } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 interface SignupProps {
@@ -11,6 +12,7 @@ const Signup: React.FC<SignupProps> = ({ setAuth }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const navigate = useNavigate();
 
   const handleSignup = async () => {
     try {
@@ -61,7 +63,7 @@ const Signup: React.FC<SignupProps> = ({ setAuth }) => {
           <Button
             fullWidth
             variant="outlined"
-            onClick={() => window.location.href = '/login'}
+            onClick={() => navigate('/login')}
           >
             Already have an account? Login
           </Button>

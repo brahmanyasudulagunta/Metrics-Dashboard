@@ -1,5 +1,6 @@
 # app/services/prometheus_client.py (extend)
 import os, requests, time
+from datetime import datetime
 
 PROM_URL = os.getenv("PROMETHEUS_URL", "http://localhost:9090")
 
@@ -28,6 +29,21 @@ class PromClient:
         # returns values array if single result else aggregated empty
         try:
             return res["data"]["result"][0]["values"]
+        except Exception:
+            return []
+
+    def query_range_for_chart(self, query, start=None, end=None, step='15s'):
+        """Transform Prometheus data to chart-friendly format: [{time: str, value: float}]"""
+        res = self.query_range(query, start, end, step)
+        try:
+            values = res["data"]["result"][0]["values"]
+            return [
+                {
+                    "time": datetime.fromtimestamp(ts).strftime("%H:%M"),
+                    "value": float(val)
+                }
+                for ts, val in values
+            ]
         except Exception:
             return []
 

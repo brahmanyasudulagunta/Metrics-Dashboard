@@ -46,7 +46,7 @@ services:
     image: frontend_metrics:v1
     container_name: frontend_metrics
     ports:
-      - "3001:8501"
+      - "3001:3001"
     depends_on:
       - backend
 

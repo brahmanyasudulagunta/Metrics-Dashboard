@@ -1,14 +1,8 @@
-FROM python:3.11-slim
-
+FROM node:18-alpine
 WORKDIR /app
-
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-
+COPY package*.json ./
+RUN npm install
 COPY . .
-
-EXPOSE 8501
-
-ENV BACKEND_URL=http://backend:8000
-
-CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+ENV PORT=3001
+EXPOSE 3001
+CMD ["npm", "start"]

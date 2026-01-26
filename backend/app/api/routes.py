@@ -25,7 +25,7 @@ class LoginRequest(BaseModel):
 @router.get("/metrics/cpu")
 def cpu_usage(current_user: str = Depends(get_current_user)):
     q = '100 - (avg by(instance)(irate(node_cpu_seconds_total{mode="idle"}[1m])) * 100)'
-    return client.query_range_result_like_prom(q)
+    return client.query_range_for_chart(q)
 
 
 # ---------------------
@@ -34,7 +34,7 @@ def cpu_usage(current_user: str = Depends(get_current_user)):
 @router.get("/metrics/memory")
 def memory_usage(current_user: str = Depends(get_current_user)):
     q = '(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100'
-    return client.query_range_result_like_prom(q)
+    return client.query_range_for_chart(q)
 
 
 # ---------------------
@@ -48,7 +48,7 @@ def disk_usage(current_user: str = Depends(get_current_user)):
         node_filesystem_size_bytes{fstype!~"tmpfs|fuse.lxcfs|overlay"} * 100
     )
     """
-    return client.query_range_result_like_prom(q)
+    return client.query_range_for_chart(q)
 
 
 # ---------------------
@@ -57,7 +57,7 @@ def disk_usage(current_user: str = Depends(get_current_user)):
 @router.get("/metrics/network_rx")
 def network_rx(current_user: str = Depends(get_current_user)):
     q = 'irate(node_network_receive_bytes_total{device!="lo"}[1m])'
-    return client.query_range_result_like_prom(q)
+    return client.query_range_for_chart(q)
 
 
 # ---------------------
@@ -66,12 +66,9 @@ def network_rx(current_user: str = Depends(get_current_user)):
 @router.get("/metrics/network_tx")
 def network_tx(current_user: str = Depends(get_current_user)):
     q = 'irate(node_network_transmit_bytes_total{device!="lo"}[1m])'
-    return client.query_range_result_like_prom(q)
+    return client.query_range_for_chart(q)
 
 
-# ---------------------
-# CONTAINER MEMORY (cAdvisor)
-# ---------------------
 @router.post("/signup")
 def signup(data: SignupRequest):
     db = SessionLocal()
@@ -79,9 +76,11 @@ def signup(data: SignupRequest):
     password = data.password
 
     if not username or not password:
+        db.close()
         raise HTTPException(status_code=400, detail="Missing fields")
 
     if db.query(User).filter(User.username == username).first():
+        db.close()
         raise HTTPException(status_code=400, detail="User already exists")
 
     user = User(
@@ -90,6 +89,7 @@ def signup(data: SignupRequest):
     )
     db.add(user)
     db.commit()
+    db.close()
 
     return {"message": "User created successfully"}
 
@@ -102,7 +102,9 @@ def login(data: LoginRequest):
     user = db.query(User).filter(User.username == username).first()
 
     if not user or not verify_password(password, user.hashed_password):
+        db.close()
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_access_token({"sub": username})
+    db.close()
     return {"access_token": token, "token_type": "bearer"}

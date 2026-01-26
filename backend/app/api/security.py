@@ -5,12 +5,13 @@ pwd_context = CryptContext(
     deprecated="auto"
 )
 
-def _normalize_password(password: str) -> bytes:
+def _normalize_password(password: str) -> str:
     """
     bcrypt only supports 72 bytes.
-    We normalize password input exactly once.
+    We truncate the password to ensure compatibility.
+    Passlib expects str, not bytes.
     """
-    return password.encode("utf-8")[:72]
+    return password[:72]
 
 def hash_password(password: str) -> str:
     normalized = _normalize_password(password)

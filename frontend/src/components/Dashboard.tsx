@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import {
   Container, Typography, Card, CardContent, Button, Tabs, Tab, Box, CircularProgress, Alert,
-  ThemeProvider, createTheme, CssBaseline, IconButton, Paper
+  ThemeProvider, createTheme, CssBaseline, IconButton, Paper, Chip, FormControl, InputLabel,
+  Select, MenuItem, Menu
 } from '@mui/material';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import LogoutIcon from '@mui/icons-material/Logout';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import DownloadIcon from '@mui/icons-material/Download';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import MetricCharts from './MetricCharts';
 
 interface MetricData {
   time: string;
@@ -25,7 +27,23 @@ interface SystemInfo {
   processesBlocked: number;
 }
 
-// Helper function to format bytes to human-readable units
+// Time range options
+const TIME_RANGES = [
+  { label: 'Last 1 Hour', value: '1h', seconds: 3600, step: '15s' },
+  { label: 'Last 6 Hours', value: '6h', seconds: 21600, step: '1m' },
+  { label: 'Last 12 Hours', value: '12h', seconds: 43200, step: '2m' },
+  { label: 'Last 24 Hours', value: '24h', seconds: 86400, step: '5m' },
+  { label: 'Last 7 Days', value: '7d', seconds: 604800, step: '30m' },
+];
+
+// Threshold configuration
+const THRESHOLDS = {
+  cpu: { warning: 60, critical: 80 },
+  memory: { warning: 70, critical: 85 },
+  disk: { warning: 75, critical: 90 },
+};
+
+// Helper function to format bytes
 const formatBytes = (bytes: number): string => {
   if (bytes === 0) return '0 B/s';
   const k = 1024;
@@ -35,34 +53,11 @@ const formatBytes = (bytes: number): string => {
   return `${(bytes / Math.pow(k, index)).toFixed(2)} ${sizes[index]}`;
 };
 
-// Custom tooltip for percentage charts
-const PercentageTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <Paper sx={{ p: 1.5 }}>
-        <Typography variant="body2" fontWeight="bold">{label}</Typography>
-        <Typography variant="body2" color="primary">
-          {payload[0].value.toFixed(2)}%
-        </Typography>
-      </Paper>
-    );
-  }
-  return null;
-};
-
-// Custom tooltip for network charts
-const NetworkTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <Paper sx={{ p: 1.5 }}>
-        <Typography variant="body2" fontWeight="bold">{label}</Typography>
-        <Typography variant="body2" color="primary">
-          {formatBytes(payload[0].value)}
-        </Typography>
-      </Paper>
-    );
-  }
-  return null;
+// Get status color and label based on value and thresholds
+const getStatusColor = (value: number, thresholds = { warning: 60, critical: 80 }) => {
+  if (value >= thresholds.critical) return { color: '#f44336', label: 'Critical', bgColor: '#ffebee' };
+  if (value >= thresholds.warning) return { color: '#ff9800', label: 'Warning', bgColor: '#fff3e0' };
+  return { color: '#4caf50', label: 'Healthy', bgColor: '#e8f5e9' };
 };
 
 const Dashboard: React.FC = () => {
@@ -80,6 +75,8 @@ const Dashboard: React.FC = () => {
   const [error, setError] = useState('');
   const [tabValue, setTabValue] = useState(0);
   const [darkMode, setDarkMode] = useState(false);
+  const [timeRange, setTimeRange] = useState('1h');
+  const [exportAnchor, setExportAnchor] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
 
   const theme = createTheme({
@@ -90,19 +87,27 @@ const Dashboard: React.FC = () => {
     },
   });
 
+  const getTimeRangeParams = () => {
+    const range = TIME_RANGES.find(r => r.value === timeRange) || TIME_RANGES[0];
+    const end = Math.floor(Date.now() / 1000);
+    const start = end - range.seconds;
+    return { start, end, step: range.step };
+  };
+
   const fetchMetrics = async () => {
     setLoading(true);
     setError('');
     const token = localStorage.getItem('token');
     const headers = { Authorization: `Bearer ${token}` };
+    const { start, end, step } = getTimeRangeParams();
 
     try {
       const [cpuRes, memRes, diskRes, rxRes, txRes, uptimeRes, loadRes, procRes] = await Promise.all([
-        axios.get('http://localhost:8000/api/metrics/cpu', { headers }),
-        axios.get('http://localhost:8000/api/metrics/memory', { headers }),
-        axios.get('http://localhost:8000/api/metrics/disk', { headers }),
-        axios.get('http://localhost:8000/api/metrics/network_rx', { headers }),
-        axios.get('http://localhost:8000/api/metrics/network_tx', { headers }),
+        axios.get(`http://localhost:8000/api/metrics/cpu?start=${start}&end=${end}&step=${step}`, { headers }),
+        axios.get(`http://localhost:8000/api/metrics/memory?start=${start}&end=${end}&step=${step}`, { headers }),
+        axios.get(`http://localhost:8000/api/metrics/disk?start=${start}&end=${end}&step=${step}`, { headers }),
+        axios.get(`http://localhost:8000/api/metrics/network_rx?start=${start}&end=${end}&step=${step}`, { headers }),
+        axios.get(`http://localhost:8000/api/metrics/network_tx?start=${start}&end=${end}&step=${step}`, { headers }),
         axios.get('http://localhost:8000/api/metrics/uptime', { headers }),
         axios.get('http://localhost:8000/api/metrics/load', { headers }),
         axios.get('http://localhost:8000/api/metrics/processes', { headers }),
@@ -131,56 +136,95 @@ const Dashboard: React.FC = () => {
     fetchMetrics();
     const interval = setInterval(fetchMetrics, 15000);
     return () => clearInterval(interval);
-  }, []);
+  }, [timeRange]);
 
   const handleRefresh = () => fetchMetrics();
-
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/login');
   };
-
   const toggleDarkMode = () => setDarkMode(!darkMode);
-
   const getCurrentValue = (data: MetricData[]) => data.length > 0 ? data[data.length - 1].value : 0;
 
-  // Y-axis tick formatter for percentage
-  const formatPercent = (value: number) => `${value}%`;
-
-  // Y-axis tick formatter for network (auto-scale)
-  const formatNetworkTick = (value: number) => {
-    if (value === 0) return '0';
-    const k = 1024;
-    if (value < k) return `${value.toFixed(0)}B`;
-    if (value < k * k) return `${(value / k).toFixed(0)}K`;
-    return `${(value / (k * k)).toFixed(1)}M`;
+  // Export to CSV
+  const exportToCSV = () => {
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    const headers = ['Time', 'CPU (%)', 'Memory (%)', 'Disk (%)', 'Network RX (bytes)', 'Network TX (bytes)'];
+    const maxLen = Math.max(cpuData.length, memData.length, diskData.length, rxData.length, txData.length);
+    const rows = [];
+    for (let i = 0; i < maxLen; i++) {
+      rows.push([
+        cpuData[i]?.time || '',
+        cpuData[i]?.value?.toFixed(2) || '',
+        memData[i]?.value?.toFixed(2) || '',
+        diskData[i]?.value?.toFixed(2) || '',
+        rxData[i]?.value?.toFixed(2) || '',
+        txData[i]?.value?.toFixed(2) || '',
+      ].join(','));
+    }
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `metrics_export_${timestamp}.csv`;
+    link.click();
+    setExportAnchor(null);
   };
+
+  // Export to JSON
+  const exportToJSON = () => {
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    const data = {
+      exportedAt: new Date().toISOString(),
+      timeRange: timeRange,
+      systemInfo: systemInfo,
+      metrics: { cpu: cpuData, memory: memData, disk: diskData, networkRx: rxData, networkTx: txData }
+    };
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `metrics_export_${timestamp}.json`;
+    link.click();
+    setExportAnchor(null);
+  };
+
+  const cpuStatus = getStatusColor(getCurrentValue(cpuData), THRESHOLDS.cpu);
+  const memStatus = getStatusColor(getCurrentValue(memData), THRESHOLDS.memory);
+  const diskStatus = getStatusColor(getCurrentValue(diskData), THRESHOLDS.disk);
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Container maxWidth="lg" sx={{ mt: 4, pb: 4 }}>
         {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h4" component="h1">
-            📊 DevOps Monitoring Dashboard
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+          <Typography variant="h4" component="h1">📊 DevOps Monitoring Dashboard</Typography>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+            <FormControl size="small" sx={{ minWidth: 140 }}>
+              <InputLabel>Time Range</InputLabel>
+              <Select value={timeRange} label="Time Range" onChange={(e) => setTimeRange(e.target.value)}>
+                {TIME_RANGES.map(range => (
+                  <MenuItem key={range.value} value={range.value}>{range.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Button variant="outlined" startIcon={<DownloadIcon />} onClick={(e) => setExportAnchor(e.currentTarget)}>Export</Button>
+            <Menu anchorEl={exportAnchor} open={Boolean(exportAnchor)} onClose={() => setExportAnchor(null)}>
+              <MenuItem onClick={exportToCSV}>Export as CSV</MenuItem>
+              <MenuItem onClick={exportToJSON}>Export as JSON</MenuItem>
+            </Menu>
             <IconButton onClick={toggleDarkMode} color="inherit">
               {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
             </IconButton>
-            <Button variant="contained" startIcon={<RefreshIcon />} onClick={handleRefresh} disabled={loading}>
-              Refresh
-            </Button>
-            <Button variant="outlined" color="error" startIcon={<LogoutIcon />} onClick={handleLogout}>
-              Logout
-            </Button>
+            <Button variant="contained" startIcon={<RefreshIcon />} onClick={handleRefresh} disabled={loading}>Refresh</Button>
+            <Button variant="outlined" color="error" startIcon={<LogoutIcon />} onClick={handleLogout}>Logout</Button>
           </Box>
         </Box>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        {/* System Info Cards - Quick Wins */}
+        {/* System Info Cards */}
         <Paper elevation={2} sx={{ p: 2, mb: 3, bgcolor: darkMode ? 'grey.900' : 'grey.100' }}>
           <Typography variant="h6" gutterBottom>⚡ System Overview</Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
@@ -207,24 +251,36 @@ const Dashboard: React.FC = () => {
           </Box>
         </Paper>
 
-        {/* Metric Cards */}
+        {/* Metric Cards with Alert Thresholds */}
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 4 }}>
-          <Card sx={{ flex: '1 1 200px', transition: '0.3s', '&:hover': { boxShadow: 6 } }}>
+          <Card sx={{ flex: '1 1 200px', transition: '0.3s', '&:hover': { boxShadow: 6 }, borderLeft: `4px solid ${cpuStatus.color}` }}>
             <CardContent>
-              <Typography color="textSecondary" gutterBottom>🔴 CPU Usage</Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography color="textSecondary" variant="body2">🔴 CPU Usage</Typography>
+                <Chip label={cpuStatus.label} size="small" sx={{ bgcolor: cpuStatus.color, color: 'white', fontWeight: 'bold' }} />
+              </Box>
               <Typography variant="h5">{getCurrentValue(cpuData).toFixed(1)}%</Typography>
+              <Typography variant="caption" color="textSecondary">Warn: {THRESHOLDS.cpu.warning}% | Crit: {THRESHOLDS.cpu.critical}%</Typography>
             </CardContent>
           </Card>
-          <Card sx={{ flex: '1 1 200px', transition: '0.3s', '&:hover': { boxShadow: 6 } }}>
+          <Card sx={{ flex: '1 1 200px', transition: '0.3s', '&:hover': { boxShadow: 6 }, borderLeft: `4px solid ${memStatus.color}` }}>
             <CardContent>
-              <Typography color="textSecondary" gutterBottom>💾 Memory Usage</Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography color="textSecondary" variant="body2">💾 Memory Usage</Typography>
+                <Chip label={memStatus.label} size="small" sx={{ bgcolor: memStatus.color, color: 'white', fontWeight: 'bold' }} />
+              </Box>
               <Typography variant="h5">{getCurrentValue(memData).toFixed(1)}%</Typography>
+              <Typography variant="caption" color="textSecondary">Warn: {THRESHOLDS.memory.warning}% | Crit: {THRESHOLDS.memory.critical}%</Typography>
             </CardContent>
           </Card>
-          <Card sx={{ flex: '1 1 200px', transition: '0.3s', '&:hover': { boxShadow: 6 } }}>
+          <Card sx={{ flex: '1 1 200px', transition: '0.3s', '&:hover': { boxShadow: 6 }, borderLeft: `4px solid ${diskStatus.color}` }}>
             <CardContent>
-              <Typography color="textSecondary" gutterBottom>💿 Disk Usage</Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography color="textSecondary" variant="body2">💿 Disk Usage</Typography>
+                <Chip label={diskStatus.label} size="small" sx={{ bgcolor: diskStatus.color, color: 'white', fontWeight: 'bold' }} />
+              </Box>
               <Typography variant="h5">{getCurrentValue(diskData).toFixed(1)}%</Typography>
+              <Typography variant="caption" color="textSecondary">Warn: {THRESHOLDS.disk.warning}% | Crit: {THRESHOLDS.disk.critical}%</Typography>
             </CardContent>
           </Card>
           <Card sx={{ flex: '1 1 200px', transition: '0.3s', '&:hover': { boxShadow: 6 } }}>
@@ -246,81 +302,15 @@ const Dashboard: React.FC = () => {
               <CircularProgress />
             </Box>
           ) : (
-            <Box sx={{ mt: 2 }}>
-              {tabValue === 0 && (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-                  <Box sx={{ flex: '1 1 45%', minWidth: 300 }}>
-                    <Typography variant="h6" gutterBottom>CPU Usage (%)</Typography>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={cpuData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="time" />
-                        <YAxis tickFormatter={formatPercent} domain={[0, 100]} />
-                        <Tooltip content={<PercentageTooltip />} />
-                        <Legend />
-                        <Line type="monotone" dataKey="value" name="CPU %" stroke="#8884d8" strokeWidth={2} dot={false} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </Box>
-                  <Box sx={{ flex: '1 1 45%', minWidth: 300 }}>
-                    <Typography variant="h6" gutterBottom>Memory Usage (%)</Typography>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={memData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="time" />
-                        <YAxis tickFormatter={formatPercent} domain={[0, 100]} />
-                        <Tooltip content={<PercentageTooltip />} />
-                        <Legend />
-                        <Line type="monotone" dataKey="value" name="Memory %" stroke="#82ca9d" strokeWidth={2} dot={false} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </Box>
-                  <Box sx={{ flex: '1 1 100%', minWidth: 300 }}>
-                    <Typography variant="h6" gutterBottom>Disk Usage (%)</Typography>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={diskData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="time" />
-                        <YAxis tickFormatter={formatPercent} domain={[0, 100]} />
-                        <Tooltip content={<PercentageTooltip />} />
-                        <Legend />
-                        <Line type="monotone" dataKey="value" name="Disk %" stroke="#ffc658" strokeWidth={2} dot={false} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </Box>
-                </Box>
-              )}
-              {tabValue === 1 && (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-                  <Box sx={{ flex: '1 1 45%', minWidth: 300 }}>
-                    <Typography variant="h6" gutterBottom>Network Receive (Throughput)</Typography>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={rxData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="time" />
-                        <YAxis tickFormatter={formatNetworkTick} />
-                        <Tooltip content={<NetworkTooltip />} />
-                        <Legend />
-                        <Line type="monotone" dataKey="value" name="RX" stroke="#ff7300" strokeWidth={2} dot={false} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </Box>
-                  <Box sx={{ flex: '1 1 45%', minWidth: 300 }}>
-                    <Typography variant="h6" gutterBottom>Network Transmit (Throughput)</Typography>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={txData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="time" />
-                        <YAxis tickFormatter={formatNetworkTick} />
-                        <Tooltip content={<NetworkTooltip />} />
-                        <Legend />
-                        <Line type="monotone" dataKey="value" name="TX" stroke="#00c853" strokeWidth={2} dot={false} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </Box>
-                </Box>
-              )}
-            </Box>
+            <MetricCharts
+              cpuData={cpuData}
+              memData={memData}
+              diskData={diskData}
+              rxData={rxData}
+              txData={txData}
+              thresholds={THRESHOLDS}
+              tabValue={tabValue}
+            />
           )}
         </Box>
       </Container>

@@ -23,50 +23,75 @@ class LoginRequest(BaseModel):
 # CPU USAGE
 # ---------------------
 @router.get("/metrics/cpu")
-def cpu_usage(current_user: str = Depends(get_current_user)):
+def cpu_usage(
+    current_user: str = Depends(get_current_user),
+    start: int = None,
+    end: int = None,
+    step: str = '15s'
+):
     q = '100 - (avg by(instance)(irate(node_cpu_seconds_total{mode="idle"}[1m])) * 100)'
-    return client.query_range_for_chart(q)
+    return client.query_range_for_chart(q, start=start, end=end, step=step)
 
 
 # ---------------------
 # MEMORY USAGE
 # ---------------------
 @router.get("/metrics/memory")
-def memory_usage(current_user: str = Depends(get_current_user)):
+def memory_usage(
+    current_user: str = Depends(get_current_user),
+    start: int = None,
+    end: int = None,
+    step: str = '15s'
+):
     q = '(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100'
-    return client.query_range_for_chart(q)
+    return client.query_range_for_chart(q, start=start, end=end, step=step)
 
 
 # ---------------------
 # DISK USAGE
 # ---------------------
 @router.get("/metrics/disk")
-def disk_usage(current_user: str = Depends(get_current_user)):
+def disk_usage(
+    current_user: str = Depends(get_current_user),
+    start: int = None,
+    end: int = None,
+    step: str = '15s'
+):
     q = """
     100 - (
         node_filesystem_free_bytes{fstype!~"tmpfs|fuse.lxcfs|overlay"} /
         node_filesystem_size_bytes{fstype!~"tmpfs|fuse.lxcfs|overlay"} * 100
     )
     """
-    return client.query_range_for_chart(q)
+    return client.query_range_for_chart(q, start=start, end=end, step=step)
 
 
 # ---------------------
 # NETWORK RX
 # ---------------------
 @router.get("/metrics/network_rx")
-def network_rx(current_user: str = Depends(get_current_user)):
+def network_rx(
+    current_user: str = Depends(get_current_user),
+    start: int = None,
+    end: int = None,
+    step: str = '15s'
+):
     q = 'irate(node_network_receive_bytes_total{device!="lo"}[1m])'
-    return client.query_range_for_chart(q)
+    return client.query_range_for_chart(q, start=start, end=end, step=step)
 
 
 # ---------------------
 # NETWORK TX
 # ---------------------
 @router.get("/metrics/network_tx")
-def network_tx(current_user: str = Depends(get_current_user)):
+def network_tx(
+    current_user: str = Depends(get_current_user),
+    start: int = None,
+    end: int = None,
+    step: str = '15s'
+):
     q = 'irate(node_network_transmit_bytes_total{device!="lo"}[1m])'
-    return client.query_range_for_chart(q)
+    return client.query_range_for_chart(q, start=start, end=end, step=step)
 
 
 # ---------------------

@@ -12,7 +12,7 @@ const App: React.FC = () => {
       <div className="App">
         <Routes>
           <Route path="/login" element={<Login setAuth={setIsAuthenticated} />} />
-          <Route path="/signup" element={<Signup setAuth={setIsAuthenticated} />} />
+          <Route path="/signup" element={<Signup />} />
           <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} />
           <Route path="/" element={<Navigate to="/login" />} />
         </Routes>

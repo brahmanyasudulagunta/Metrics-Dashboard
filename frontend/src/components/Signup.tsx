@@ -3,11 +3,7 @@ import { TextField, Button, Container, Typography, Paper, Box, Alert } from '@mu
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-interface SignupProps {
-  setAuth: (auth: boolean) => void;
-}
-
-const Signup: React.FC<SignupProps> = ({ setAuth }) => {
+const Signup: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');

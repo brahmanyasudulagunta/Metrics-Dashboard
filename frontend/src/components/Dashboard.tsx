@@ -27,6 +27,12 @@ interface SystemInfo {
   processesBlocked: number;
 }
 
+interface ContainerInfo {
+  name: string;
+  cpu: number;
+  memory: number;
+}
+
 // Time range options
 const TIME_RANGES = [
   { label: 'Last 1 Hour', value: '1h', seconds: 3600, step: '15s' },
@@ -66,6 +72,7 @@ const Dashboard: React.FC = () => {
   const [diskData, setDiskData] = useState<MetricData[]>([]);
   const [rxData, setRxData] = useState<MetricData[]>([]);
   const [txData, setTxData] = useState<MetricData[]>([]);
+  const [containers, setContainers] = useState<ContainerInfo[]>([]);
   const [systemInfo, setSystemInfo] = useState<SystemInfo>({
     uptime: 'Loading...',
     load1: 0, load5: 0, load15: 0,
@@ -102,7 +109,7 @@ const Dashboard: React.FC = () => {
     const { start, end, step } = getTimeRangeParams();
 
     try {
-      const [cpuRes, memRes, diskRes, rxRes, txRes, uptimeRes, loadRes, procRes] = await Promise.all([
+      const [cpuRes, memRes, diskRes, rxRes, txRes, uptimeRes, loadRes, procRes, containersRes] = await Promise.all([
         axios.get(`http://localhost:8000/api/metrics/cpu?start=${start}&end=${end}&step=${step}`, { headers }),
         axios.get(`http://localhost:8000/api/metrics/memory?start=${start}&end=${end}&step=${step}`, { headers }),
         axios.get(`http://localhost:8000/api/metrics/disk?start=${start}&end=${end}&step=${step}`, { headers }),
@@ -111,12 +118,14 @@ const Dashboard: React.FC = () => {
         axios.get('http://localhost:8000/api/metrics/uptime', { headers }),
         axios.get('http://localhost:8000/api/metrics/load', { headers }),
         axios.get('http://localhost:8000/api/metrics/processes', { headers }),
+        axios.get('http://localhost:8000/api/metrics/containers', { headers }),
       ]);
       setCpuData(cpuRes.data);
       setMemData(memRes.data);
       setDiskData(diskRes.data);
       setRxData(rxRes.data);
       setTxData(txRes.data);
+      setContainers(containersRes.data.containers || []);
       setSystemInfo({
         uptime: uptimeRes.data.uptime,
         load1: loadRes.data.load1,
@@ -134,8 +143,6 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     fetchMetrics();
-    const interval = setInterval(fetchMetrics, 15000);
-    return () => clearInterval(interval);
   }, [timeRange]);
 
   const handleRefresh = () => fetchMetrics();
@@ -178,6 +185,7 @@ const Dashboard: React.FC = () => {
       exportedAt: new Date().toISOString(),
       timeRange: timeRange,
       systemInfo: systemInfo,
+      containers: containers,
       metrics: { cpu: cpuData, memory: memData, disk: diskData, networkRx: rxData, networkTx: txData }
     };
     const json = JSON.stringify(data, null, 2);
@@ -248,6 +256,12 @@ const Dashboard: React.FC = () => {
                 <Typography variant="caption" color="textSecondary">{systemInfo.processesBlocked} blocked</Typography>
               </CardContent>
             </Card>
+            <Card sx={{ flex: '1 1 180px', bgcolor: darkMode ? 'grey.800' : 'white' }}>
+              <CardContent>
+                <Typography color="textSecondary" variant="body2">🐳 Containers</Typography>
+                <Typography variant="h6">{containers.length} running</Typography>
+              </CardContent>
+            </Card>
           </Box>
         </Paper>
 
@@ -296,6 +310,7 @@ const Dashboard: React.FC = () => {
           <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)} aria-label="metrics tabs">
             <Tab label="System" />
             <Tab label="Network" />
+            <Tab label="Containers" />
           </Tabs>
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
@@ -308,8 +323,10 @@ const Dashboard: React.FC = () => {
               diskData={diskData}
               rxData={rxData}
               txData={txData}
+              containers={containers}
               thresholds={THRESHOLDS}
               tabValue={tabValue}
+              darkMode={darkMode}
             />
           )}
         </Box>

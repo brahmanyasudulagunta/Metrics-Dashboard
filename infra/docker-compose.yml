@@ -30,6 +30,24 @@ services:
     ports:
       - "9100:9100"
 
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    privileged: true
+    ports:
+      - "9000:8080"
+    command:
+      - '--housekeeping_interval=30s'
+      - '--docker_only=true'
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+
   backend:
     image: backend_metrics:v1
     container_name: backend_metrics

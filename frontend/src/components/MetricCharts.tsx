@@ -1,10 +1,16 @@
 import React from 'react';
-import { Box, Typography, Paper } from '@mui/material';
+import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, LinearProgress } from '@mui/material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 interface MetricData {
     time: string;
     value: number;
+}
+
+interface ContainerInfo {
+    name: string;
+    cpu: number;
+    memory: number;
 }
 
 interface ChartThresholds {
@@ -18,12 +24,14 @@ interface MetricChartsProps {
     diskData: MetricData[];
     rxData: MetricData[];
     txData: MetricData[];
+    containers: ContainerInfo[];
     thresholds: {
         cpu: ChartThresholds;
         memory: ChartThresholds;
         disk: ChartThresholds;
     };
     tabValue: number;
+    darkMode: boolean;
 }
 
 // Helper function to format bytes to human-readable units
@@ -78,17 +86,31 @@ const formatNetworkTick = (value: number) => {
     return `${(value / (k * k)).toFixed(1)}M`;
 };
 
+// Get container icon based on name
+const getContainerIcon = (name: string) => {
+    if (name.includes('frontend')) return '🌐';
+    if (name.includes('backend')) return '⚙️';
+    if (name.includes('prometheus')) return '📊';
+    if (name.includes('grafana')) return '📈';
+    if (name.includes('node')) return '🖥️';
+    if (name.includes('cadvisor')) return '📦';
+    return '🐳';
+};
+
 const MetricCharts: React.FC<MetricChartsProps> = ({
     cpuData,
     memData,
     diskData,
     rxData,
     txData,
+    containers,
     thresholds,
-    tabValue
+    tabValue,
+    darkMode
 }) => {
     return (
         <Box sx={{ mt: 2 }}>
+            {/* System Tab */}
             {tabValue === 0 && (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
                     <Box sx={{ flex: '1 1 45%', minWidth: 300 }}>
@@ -138,6 +160,8 @@ const MetricCharts: React.FC<MetricChartsProps> = ({
                     </Box>
                 </Box>
             )}
+
+            {/* Network Tab */}
             {tabValue === 1 && (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
                     <Box sx={{ flex: '1 1 45%', minWidth: 300 }}>
@@ -166,6 +190,76 @@ const MetricCharts: React.FC<MetricChartsProps> = ({
                             </LineChart>
                         </ResponsiveContainer>
                     </Box>
+                </Box>
+            )}
+
+            {/* Containers Tab */}
+            {tabValue === 2 && (
+                <Box>
+                    <Typography variant="h6" gutterBottom>🐳 Container Metrics</Typography>
+                    <TableContainer component={Paper}>
+                        <Table>
+                            <TableHead>
+                                <TableRow sx={{ bgcolor: darkMode ? 'grey.800' : 'grey.100' }}>
+                                    <TableCell><strong>Container</strong></TableCell>
+                                    <TableCell><strong>CPU Usage</strong></TableCell>
+                                    <TableCell><strong>Memory (MB)</strong></TableCell>
+                                    <TableCell><strong>Status</strong></TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {containers.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={4} align="center">
+                                            <Typography color="textSecondary">No container data available. Make sure cAdvisor is running.</Typography>
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    containers.map((container) => {
+                                        const status = container.cpu > 50 ? 'Warning' : 'Healthy';
+                                        const statusColor = container.cpu > 50 ? '#ff9800' : '#4caf50';
+                                        return (
+                                            <TableRow key={container.name} hover>
+                                                <TableCell>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                        <span>{getContainerIcon(container.name)}</span>
+                                                        <Typography fontWeight="medium">{container.name}</Typography>
+                                                    </Box>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                        <Box sx={{ width: 100 }}>
+                                                            <LinearProgress
+                                                                variant="determinate"
+                                                                value={Math.min(container.cpu, 100)}
+                                                                sx={{
+                                                                    height: 8,
+                                                                    borderRadius: 4,
+                                                                    bgcolor: 'grey.300',
+                                                                    '& .MuiLinearProgress-bar': {
+                                                                        bgcolor: container.cpu > 80 ? '#f44336' : container.cpu > 50 ? '#ff9800' : '#4caf50'
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </Box>
+                                                        <Typography variant="body2">{container.cpu.toFixed(1)}%</Typography>
+                                                    </Box>
+                                                </TableCell>
+                                                <TableCell>{container.memory.toFixed(1)} MB</TableCell>
+                                                <TableCell>
+                                                    <Chip
+                                                        label={status}
+                                                        size="small"
+                                                        sx={{ bgcolor: statusColor, color: 'white', fontWeight: 'bold' }}
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })
+                                )}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
                 </Box>
             )}
         </Box>

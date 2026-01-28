@@ -25,6 +25,7 @@ interface SystemInfo {
   load15: number;
   processesRunning: number;
   processesBlocked: number;
+  temperature: { value: number; status: string; available: boolean };
 }
 
 interface ContainerInfo {
@@ -76,7 +77,8 @@ const Dashboard: React.FC = () => {
   const [systemInfo, setSystemInfo] = useState<SystemInfo>({
     uptime: 'Loading...',
     load1: 0, load5: 0, load15: 0,
-    processesRunning: 0, processesBlocked: 0
+    processesRunning: 0, processesBlocked: 0,
+    temperature: { value: 0, status: 'N/A', available: false }
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -109,7 +111,7 @@ const Dashboard: React.FC = () => {
     const { start, end, step } = getTimeRangeParams();
 
     try {
-      const [cpuRes, memRes, diskRes, rxRes, txRes, uptimeRes, loadRes, procRes, containersRes] = await Promise.all([
+      const [cpuRes, memRes, diskRes, rxRes, txRes, uptimeRes, loadRes, procRes, containersRes, tempRes] = await Promise.all([
         axios.get(`http://localhost:8000/api/metrics/cpu?start=${start}&end=${end}&step=${step}`, { headers }),
         axios.get(`http://localhost:8000/api/metrics/memory?start=${start}&end=${end}&step=${step}`, { headers }),
         axios.get(`http://localhost:8000/api/metrics/disk?start=${start}&end=${end}&step=${step}`, { headers }),
@@ -119,6 +121,7 @@ const Dashboard: React.FC = () => {
         axios.get('http://localhost:8000/api/metrics/load', { headers }),
         axios.get('http://localhost:8000/api/metrics/processes', { headers }),
         axios.get('http://localhost:8000/api/metrics/containers', { headers }),
+        axios.get('http://localhost:8000/api/metrics/temperature', { headers }),
       ]);
       setCpuData(cpuRes.data);
       setMemData(memRes.data);
@@ -133,6 +136,7 @@ const Dashboard: React.FC = () => {
         load15: loadRes.data.load15,
         processesRunning: procRes.data.running,
         processesBlocked: procRes.data.blocked,
+        temperature: tempRes.data,
       });
     } catch (err) {
       setError('Failed to fetch metrics. Please try again.');
@@ -260,6 +264,17 @@ const Dashboard: React.FC = () => {
               <CardContent>
                 <Typography color="textSecondary" variant="body2">🐳 Containers</Typography>
                 <Typography variant="h6">{containers.length} running</Typography>
+              </CardContent>
+            </Card>
+            <Card sx={{ flex: '1 1 180px', bgcolor: darkMode ? 'grey.800' : 'white', borderLeft: systemInfo.temperature.available ? (systemInfo.temperature.value > 80 ? '4px solid #f44336' : '4px solid #4caf50') : 'none' }}>
+              <CardContent>
+                <Typography color="textSecondary" variant="body2">🌡️ Temperature</Typography>
+                <Typography variant="h6">
+                  {systemInfo.temperature.available ? `${systemInfo.temperature.value}°C` : 'N/A'}
+                </Typography>
+                <Typography variant="caption" color={systemInfo.temperature.available ? (systemInfo.temperature.value > 80 ? 'error' : 'textSecondary') : 'textSecondary'}>
+                  {systemInfo.temperature.status}
+                </Typography>
               </CardContent>
             </Card>
           </Box>

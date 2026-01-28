@@ -29,6 +29,9 @@ services:
     container_name: node-exporter
     ports:
       - "9100:9100"
+    privileged: true
+    volumes:
+      - /sys:/sys:ro
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest

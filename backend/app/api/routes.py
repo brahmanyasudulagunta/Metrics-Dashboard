@@ -144,38 +144,81 @@ def process_count(current_user: str = Depends(get_current_user)):
 
 
 # ---------------------
+# TEMPERATURE (Hardware)
+# ---------------------
+@router.get("/metrics/temperature")
+def system_temperature(current_user: str = Depends(get_current_user)):
+    """Get system temperature if available"""
+    try:
+        # Try to get CPU package or core temperature
+        queries = [
+            'node_hwmon_temp_celsius{label="Package id 0"}',  # Intel/AMD Package
+            'node_hwmon_temp_celsius{label="core_0"}',       # Core 0
+            'node_hwmon_temp_celsius{sensor="temp1"}',       # Generic temp1
+            'avg(node_hwmon_temp_celsius)'                    # Average of all sensors
+        ]
+        
+        for q in queries:
+            try:
+                res = client.query(q)
+                if res.get("data", {}).get("result"):
+                    temp = float(res["data"]["result"][0]["value"][1])
+                    return {"value": round(temp, 1), "status": "Active", "available": True}
+            except:
+                continue
+                
+        return {"value": 0, "status": "No Sensors", "available": False}
+    except Exception as e:
+        return {"value": 0, "status": "Error", "available": False, "details": str(e)}
+
+
+# ---------------------
 # CONTAINER LIST (cAdvisor)
 # ---------------------
 @router.get("/metrics/containers")
 def container_list(current_user: str = Depends(get_current_user)):
     """Get list of running containers with basic stats"""
     try:
-        # Get container names and their CPU usage
-        cpu_query = 'sum(rate(container_cpu_usage_seconds_total{name!=""}[1m])) by (name) * 100'
-        mem_query = 'container_memory_usage_bytes{name!=""}'
+        # Use irate for more accurate real-time CPU usage
+        # Filter out empty container names and POD containers
+        cpu_query = 'sum(irate(container_cpu_usage_seconds_total{name!="",name!~".*POD.*"}[2m])) by (name) * 100'
+        mem_query = 'container_memory_usage_bytes{name!="",name!~".*POD.*"}'
         
         cpu_res = client.query(cpu_query)
         mem_res = client.query(mem_query)
         
         containers = {}
         
+        # Process Memory data first (more reliable)
+        for result in mem_res.get("data", {}).get("result", []):
+            name = result.get("metric", {}).get("name", "")
+            if not name or name == "":
+                continue
+            try:
+                mem_bytes = float(result["value"][1])
+                mem_mb = mem_bytes / (1024 * 1024)
+                containers[name] = {"name": name, "cpu": 0.0, "memory": round(mem_mb, 2)}
+            except (IndexError, ValueError, KeyError):
+                continue
+        
         # Process CPU data
         for result in cpu_res.get("data", {}).get("result", []):
-            name = result["metric"].get("name", "unknown")
-            cpu = float(result["value"][1])
-            containers[name] = {"name": name, "cpu": round(cpu, 2), "memory": 0}
+            name = result.get("metric", {}).get("name", "")
+            if not name or name == "":
+                continue
+            try:
+                cpu = float(result["value"][1])
+                if name in containers:
+                    containers[name]["cpu"] = round(cpu, 2)
+                else:
+                    containers[name] = {"name": name, "cpu": round(cpu, 2), "memory": 0.0}
+            except (IndexError, ValueError, KeyError):
+                continue
         
-        # Process Memory data
-        for result in mem_res.get("data", {}).get("result", []):
-            name = result["metric"].get("name", "unknown")
-            mem_bytes = float(result["value"][1])
-            mem_mb = mem_bytes / (1024 * 1024)
-            if name in containers:
-                containers[name]["memory"] = round(mem_mb, 2)
-            else:
-                containers[name] = {"name": name, "cpu": 0, "memory": round(mem_mb, 2)}
+        # Filter out containers with no meaningful data
+        valid_containers = [c for c in containers.values() if c["memory"] > 0 or c["cpu"] > 0]
         
-        return {"containers": list(containers.values())}
+        return {"containers": valid_containers}
     except Exception as e:
         return {"containers": [], "error": str(e)}
 

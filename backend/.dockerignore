@@ -1,0 +1,43 @@
+# Python bytecode
+__pycache__
+*.py[cod]
+*$py.class
+*.pyo
+
+# Virtual environment
+venv
+.venv
+env
+ENV
+
+# Version control
+.git
+.gitignore
+
+# Environment files
+.env
+.env.local
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+
+# Testing
+.pytest_cache
+.coverage
+htmlcov
+.tox
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.egg-info
+dist
+build

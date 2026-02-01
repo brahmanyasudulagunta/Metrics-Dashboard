@@ -12,18 +12,6 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--web.enable-lifecycle'
 
-
-  grafana:
-    image: grafana/grafana:9.4.0
-    container_name: grafana
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    volumes:
-      - grafana-storage:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning
-    ports:
-      - "3000:3000"
-
   node-exporter:
     image: prom/node-exporter:latest
     container_name: node-exporter
@@ -71,5 +59,3 @@ services:
     depends_on:
       - backend
 
-volumes:
-  grafana-storage:

@@ -91,7 +91,7 @@ const getContainerIcon = (name: string) => {
     if (name.includes('frontend')) return '🌐';
     if (name.includes('backend')) return '⚙️';
     if (name.includes('prometheus')) return '📊';
-    if (name.includes('grafana')) return '📈';
+
     if (name.includes('node')) return '🖥️';
     if (name.includes('cadvisor')) return '📦';
     return '🐳';

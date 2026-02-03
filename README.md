@@ -1,4 +1,4 @@
-# 📊 Metrics Dashboard
+# 📊 System & Infra Metrics Dashboard
 
 A full-stack DevOps monitoring dashboard that collects and visualizes system metrics using Prometheus, with a modern React frontend and FastAPI backend.
 

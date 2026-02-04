@@ -9,6 +9,7 @@ A full-stack DevOps monitoring dashboard that collects and visualizes system met
 - **Real-time System Metrics**: CPU, Memory, Disk usage with threshold alerts
 - **Network Monitoring**: TX/RX throughput visualization
 - **Container Metrics**: Docker container CPU and memory via cAdvisor
+- **Process Manager**: View and stop running processes with safety confirmations
 - **User Authentication**: Secure JWT-based signup/login
 - **Dark/Light Mode**: Toggle between themes
 - **Data Export**: Export metrics as CSV or JSON
@@ -121,6 +122,8 @@ SQLALCHEMY_DATABASE_URL=sqlite:///./data/users.db
 | GET | `/api/metrics/load` | Load averages |
 | GET | `/api/metrics/containers` | Container list with stats |
 | GET | `/api/metrics/temperature` | System temperature |
+| GET | `/api/processes/list` | List running processes |
+| POST | `/api/processes/stop/{pid}` | Stop a process by PID |
 
 ## 🛠️ Tech Stack
 

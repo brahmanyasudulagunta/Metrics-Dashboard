@@ -5,7 +5,6 @@ from app.db.database import SessionLocal
 from app.db.models import User
 from app.api.security import hash_password, verify_password
 from pydantic import BaseModel
-import psutil
 
 router = APIRouter()
 client = PromClient()
@@ -252,52 +251,6 @@ def container_memory(
     """Get container memory usage over time (in MB)"""
     q = 'container_memory_usage_bytes{name!=""} / 1024 / 1024'
     return client.query_range_for_chart(q, start=start, end=end, step=step)
-
-
-# ---------------------
-# PROCESS MANAGER (using psutil)
-# ---------------------
-@router.get("/processes/list")
-def list_running_processes(current_user: str = Depends(get_current_user)):
-    """List running processes with details using psutil"""
-    processes = []
-    for proc in psutil.process_iter(['pid', 'name', 'username', 'cpu_percent', 'memory_info']):
-        try:
-            pinfo = proc.info
-            mem_mb = pinfo['memory_info'].rss / (1024 * 1024) if pinfo['memory_info'] else 0
-            processes.append({
-                "pid": pinfo['pid'],
-                "name": pinfo['name'] or "Unknown",
-                "user": pinfo['username'] or "Unknown",
-                "cpu": pinfo['cpu_percent'] or 0,
-                "memory": round(mem_mb, 2)
-            })
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            pass
-    
-    # Sort by CPU usage and return top 30
-    processes.sort(key=lambda x: x['cpu'], reverse=True)
-    return {"processes": processes[:30]}
-
-
-@router.post("/processes/stop/{pid}")
-def stop_process(pid: int, current_user: str = Depends(get_current_user)):
-    """Stop a specific process by PID with safety checks"""
-    # Safety check: prevent stopping critical system processes
-    if pid <= 1:
-        raise HTTPException(status_code=400, detail="Cannot stop system critical process (PID <= 1)")
-    
-    try:
-        proc = psutil.Process(pid)
-        proc_name = proc.name()
-        proc.terminate()  # Graceful termination
-        return {"message": f"Process {pid} ({proc_name}) termination signal sent", "success": True}
-    except psutil.NoSuchProcess:
-        raise HTTPException(status_code=404, detail=f"Process {pid} not found")
-    except psutil.AccessDenied:
-        raise HTTPException(status_code=403, detail=f"Permission denied to stop process {pid}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/signup")

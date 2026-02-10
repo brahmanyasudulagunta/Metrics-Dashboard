@@ -12,7 +12,6 @@ import DownloadIcon from '@mui/icons-material/Download';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import MetricCharts from './MetricCharts';
-import ProcessTable from './ProcessTable';
 
 interface MetricData {
   time: string;
@@ -31,14 +30,6 @@ interface SystemInfo {
 
 interface ContainerInfo {
   name: string;
-  cpu: number;
-  memory: number;
-}
-
-interface ProcessInfo {
-  pid: number;
-  name: string;
-  user: string;
   cpu: number;
   memory: number;
 }
@@ -83,8 +74,6 @@ const Dashboard: React.FC = () => {
   const [rxData, setRxData] = useState<MetricData[]>([]);
   const [txData, setTxData] = useState<MetricData[]>([]);
   const [containers, setContainers] = useState<ContainerInfo[]>([]);
-  const [processes, setProcesses] = useState<ProcessInfo[]>([]);
-  const [processesLoading, setProcessesLoading] = useState(false);
   const [systemInfo, setSystemInfo] = useState<SystemInfo>({
     uptime: 'Loading...',
     load1: 0, load5: 0, load15: 0,
@@ -167,41 +156,6 @@ const Dashboard: React.FC = () => {
   };
   const toggleDarkMode = () => setDarkMode(!darkMode);
   const getCurrentValue = (data: MetricData[]) => data.length > 0 ? data[data.length - 1].value : 0;
-
-  // Fetch process list for the Processes tab
-  const fetchProcesses = async () => {
-    setProcessesLoading(true);
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-    try {
-      const res = await axios.get('http://localhost:8000/api/processes/list', { headers });
-      setProcesses(res.data.processes || []);
-    } catch (err) {
-      console.error('Failed to fetch processes:', err);
-    } finally {
-      setProcessesLoading(false);
-    }
-  };
-
-  // Stop a process by PID
-  const handleStopProcess = async (pid: number) => {
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-    try {
-      await axios.post(`http://localhost:8000/api/processes/stop/${pid}`, {}, { headers });
-      // Refresh process list after a short delay
-      setTimeout(fetchProcesses, 500);
-    } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to stop process');
-    }
-  };
-
-  // Fetch processes when switching to Processes tab
-  useEffect(() => {
-    if (tabValue === 3) {
-      fetchProcesses();
-    }
-  }, [tabValue]);
 
   // Export to CSV
   const exportToCSV = () => {
@@ -372,20 +326,11 @@ const Dashboard: React.FC = () => {
             <Tab label="System" />
             <Tab label="Network" />
             <Tab label="Containers" />
-            <Tab label="Processes" />
           </Tabs>
-          {loading && tabValue !== 3 ? (
+          {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
               <CircularProgress />
             </Box>
-          ) : tabValue === 3 ? (
-            <ProcessTable
-              processes={processes}
-              onStop={handleStopProcess}
-              onRefresh={fetchProcesses}
-              loading={processesLoading}
-              darkMode={darkMode}
-            />
           ) : (
             <MetricCharts
               cpuData={cpuData}

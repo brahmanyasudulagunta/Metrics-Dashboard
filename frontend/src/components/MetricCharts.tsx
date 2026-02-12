@@ -86,17 +86,6 @@ const formatNetworkTick = (value: number) => {
     return `${(value / (k * k)).toFixed(1)}M`;
 };
 
-// Get container icon based on name
-const getContainerIcon = (name: string) => {
-    if (name.includes('frontend')) return '🌐';
-    if (name.includes('backend')) return '⚙️';
-    if (name.includes('prometheus')) return '📊';
-
-    if (name.includes('node')) return '🖥️';
-    if (name.includes('cadvisor')) return '📦';
-    return '🐳';
-};
-
 const MetricCharts: React.FC<MetricChartsProps> = ({
     cpuData,
     memData,
@@ -196,7 +185,7 @@ const MetricCharts: React.FC<MetricChartsProps> = ({
             {/* Containers Tab */}
             {tabValue === 2 && (
                 <Box>
-                    <Typography variant="h6" gutterBottom>🐳 Container Metrics</Typography>
+                    <Typography variant="h6" gutterBottom>Container Metrics</Typography>
                     <TableContainer component={Paper}>
                         <Table>
                             <TableHead>
@@ -221,10 +210,7 @@ const MetricCharts: React.FC<MetricChartsProps> = ({
                                         return (
                                             <TableRow key={container.name} hover>
                                                 <TableCell>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                        <span>{getContainerIcon(container.name)}</span>
-                                                        <Typography fontWeight="medium">{container.name}</Typography>
-                                                    </Box>
+                                                    <Typography fontWeight="medium">{container.name}</Typography>
                                                 </TableCell>
                                                 <TableCell>
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

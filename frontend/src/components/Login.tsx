@@ -28,7 +28,7 @@ const Login: React.FC<LoginProps> = ({ setAuth }) => {
     <Container component="main" maxWidth="sm">
       <Paper elevation={3} sx={{ padding: 4, marginTop: 8 }}>
         <Typography component="h1" variant="h4" align="center" gutterBottom>
-          🔐 DevOps Monitoring Login
+           DevOps Monitoring Login
         </Typography>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <Box component="form" noValidate sx={{ mt: 1 }}>

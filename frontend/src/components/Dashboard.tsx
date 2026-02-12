@@ -9,6 +9,15 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import DownloadIcon from '@mui/icons-material/Download';
+import MemoryIcon from '@mui/icons-material/Memory';
+import StorageIcon from '@mui/icons-material/Storage';
+import DiscFullIcon from '@mui/icons-material/DiscFull';
+import WifiIcon from '@mui/icons-material/Wifi';
+import ThermostatIcon from '@mui/icons-material/Thermostat';
+import SettingsIcon from '@mui/icons-material/Settings';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import SpeedIcon from '@mui/icons-material/Speed';
+import DashboardIcon from '@mui/icons-material/Dashboard';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import MetricCharts from './MetricCharts';
@@ -211,7 +220,7 @@ const Dashboard: React.FC = () => {
       <Container maxWidth="lg" sx={{ mt: 4, pb: 4 }}>
         {/* Header */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-          <Typography variant="h4" component="h1">📊 DevOps Monitoring Dashboard</Typography>
+          <Typography variant="h4" component="h1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><DashboardIcon fontSize="large" /> Metrics Dashboard</Typography>
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
             <FormControl size="small" sx={{ minWidth: 140 }}>
               <InputLabel>Time Range</InputLabel>
@@ -238,37 +247,37 @@ const Dashboard: React.FC = () => {
 
         {/* System Info Cards */}
         <Paper elevation={2} sx={{ p: 2, mb: 3, bgcolor: darkMode ? 'grey.900' : 'grey.100' }}>
-          <Typography variant="h6" gutterBottom>⚡ System Overview</Typography>
+          <Typography variant="h6" gutterBottom>System Overview</Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
             <Card sx={{ flex: '1 1 180px', bgcolor: darkMode ? 'grey.800' : 'white' }}>
               <CardContent>
-                <Typography color="textSecondary" variant="body2">⏱️ Uptime</Typography>
+                <Typography color="textSecondary" variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><AccessTimeIcon fontSize="small" /> Uptime</Typography>
                 <Typography variant="h6">{systemInfo.uptime}</Typography>
               </CardContent>
             </Card>
             <Card sx={{ flex: '1 1 180px', bgcolor: darkMode ? 'grey.800' : 'white' }}>
               <CardContent>
-                <Typography color="textSecondary" variant="body2">📊 Load Average</Typography>
+                <Typography color="textSecondary" variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><SpeedIcon fontSize="small" /> Load Average</Typography>
                 <Typography variant="h6">{systemInfo.load1} / {systemInfo.load5} / {systemInfo.load15}</Typography>
                 <Typography variant="caption" color="textSecondary">1 / 5 / 15 min</Typography>
               </CardContent>
             </Card>
             <Card sx={{ flex: '1 1 180px', bgcolor: darkMode ? 'grey.800' : 'white' }}>
               <CardContent>
-                <Typography color="textSecondary" variant="body2">⚙️ Processes</Typography>
+                <Typography color="textSecondary" variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><SettingsIcon fontSize="small" /> Processes</Typography>
                 <Typography variant="h6">{systemInfo.processesRunning} running</Typography>
                 <Typography variant="caption" color="textSecondary">{systemInfo.processesBlocked} blocked</Typography>
               </CardContent>
             </Card>
             <Card sx={{ flex: '1 1 180px', bgcolor: darkMode ? 'grey.800' : 'white' }}>
               <CardContent>
-                <Typography color="textSecondary" variant="body2">🐳 Containers</Typography>
+                <Typography color="textSecondary" variant="body2">Containers</Typography>
                 <Typography variant="h6">{containers.length} running</Typography>
               </CardContent>
             </Card>
             <Card sx={{ flex: '1 1 180px', bgcolor: darkMode ? 'grey.800' : 'white', borderLeft: systemInfo.temperature.available ? (systemInfo.temperature.value > 80 ? '4px solid #f44336' : '4px solid #4caf50') : 'none' }}>
               <CardContent>
-                <Typography color="textSecondary" variant="body2">🌡️ Temperature</Typography>
+                <Typography color="textSecondary" variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><ThermostatIcon fontSize="small" /> Temperature</Typography>
                 <Typography variant="h6">
                   {systemInfo.temperature.available ? `${systemInfo.temperature.value}°C` : 'N/A'}
                 </Typography>
@@ -285,7 +294,7 @@ const Dashboard: React.FC = () => {
           <Card sx={{ flex: '1 1 200px', transition: '0.3s', '&:hover': { boxShadow: 6 }, borderLeft: `4px solid ${cpuStatus.color}` }}>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                <Typography color="textSecondary" variant="body2">🔴 CPU Usage</Typography>
+                <Typography color="textSecondary" variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><MemoryIcon fontSize="small" /> CPU Usage</Typography>
                 <Chip label={cpuStatus.label} size="small" sx={{ bgcolor: cpuStatus.color, color: 'white', fontWeight: 'bold' }} />
               </Box>
               <Typography variant="h5">{getCurrentValue(cpuData).toFixed(1)}%</Typography>
@@ -295,7 +304,7 @@ const Dashboard: React.FC = () => {
           <Card sx={{ flex: '1 1 200px', transition: '0.3s', '&:hover': { boxShadow: 6 }, borderLeft: `4px solid ${memStatus.color}` }}>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                <Typography color="textSecondary" variant="body2">💾 Memory Usage</Typography>
+                <Typography color="textSecondary" variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><StorageIcon fontSize="small" /> Memory Usage</Typography>
                 <Chip label={memStatus.label} size="small" sx={{ bgcolor: memStatus.color, color: 'white', fontWeight: 'bold' }} />
               </Box>
               <Typography variant="h5">{getCurrentValue(memData).toFixed(1)}%</Typography>
@@ -305,7 +314,7 @@ const Dashboard: React.FC = () => {
           <Card sx={{ flex: '1 1 200px', transition: '0.3s', '&:hover': { boxShadow: 6 }, borderLeft: `4px solid ${diskStatus.color}` }}>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                <Typography color="textSecondary" variant="body2">💿 Disk Usage</Typography>
+                <Typography color="textSecondary" variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><DiscFullIcon fontSize="small" /> Disk Usage</Typography>
                 <Chip label={diskStatus.label} size="small" sx={{ bgcolor: diskStatus.color, color: 'white', fontWeight: 'bold' }} />
               </Box>
               <Typography variant="h5">{getCurrentValue(diskData).toFixed(1)}%</Typography>
@@ -314,7 +323,7 @@ const Dashboard: React.FC = () => {
           </Card>
           <Card sx={{ flex: '1 1 200px', transition: '0.3s', '&:hover': { boxShadow: 6 } }}>
             <CardContent>
-              <Typography color="textSecondary" gutterBottom>📡 Network RX</Typography>
+              <Typography color="textSecondary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><WifiIcon fontSize="small" /> Network RX</Typography>
               <Typography variant="h5">{formatBytes(getCurrentValue(rxData))}</Typography>
             </CardContent>
           </Card>

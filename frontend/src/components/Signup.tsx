@@ -25,7 +25,7 @@ const Signup: React.FC = () => {
     <Container component="main" maxWidth="sm">
       <Paper elevation={3} sx={{ padding: 4, marginTop: 8 }}>
         <Typography component="h1" variant="h4" align="center" gutterBottom>
-          🔐 DevOps Monitoring Signup
+           DevOps Monitoring Signup
         </Typography>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}

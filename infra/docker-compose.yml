@@ -39,22 +39,37 @@ services:
       - /dev/kmsg
 
   backend:
-    image: backend_metrics:v1
-    container_name: backend_metrics
+    image: backend-metrics:v1
+    container_name: backend-metrics
     volumes:
       - ./data:/app/data
     env_file:
-      - ../backend/.env.example
+      - ../backend/.env
     ports:
       - "8000:8000"
     depends_on:
       - prometheus
+      - postgres
 
   frontend:
-    image: frontend_metrics:v1
-    container_name: frontend_metrics
+    image: frontend-metrics:v1
+    container_name: frontend-metrics
     ports:
       - "3001:3001"
     depends_on:
       - backend
 
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres-metrics
+    environment:
+      POSTGRES_USER: krishna
+      POSTGRES_PASSWORD: 1729
+      POSTGRES_DB: postgresdb
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

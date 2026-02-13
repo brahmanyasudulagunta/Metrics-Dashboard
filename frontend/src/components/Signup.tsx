@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { TextField, Button, Container, Typography, Paper, Box, Alert } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_URL from '../config';
 
 const Signup: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -12,7 +13,7 @@ const Signup: React.FC = () => {
 
   const handleSignup = async () => {
     try {
-      const response = await axios.post('http://localhost:8000/api/signup', { username, password });
+      const response = await axios.post(`${API_URL}/api/signup`, { username, password });
       setSuccess('User created successfully! Please login.');
       setError('');
     } catch (err: any) {
@@ -25,7 +26,7 @@ const Signup: React.FC = () => {
     <Container component="main" maxWidth="sm">
       <Paper elevation={3} sx={{ padding: 4, marginTop: 8 }}>
         <Typography component="h1" variant="h4" align="center" gutterBottom>
-           DevOps Monitoring Signup
+          DevOps Monitoring Signup
         </Typography>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}

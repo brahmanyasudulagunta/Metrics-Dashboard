@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { TextField, Button, Container, Typography, Paper, Box, Alert } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_URL from '../config';
 
 interface LoginProps {
   setAuth: (auth: boolean) => void;
@@ -15,7 +16,7 @@ const Login: React.FC<LoginProps> = ({ setAuth }) => {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post('http://localhost:8000/api/login', { username, password });
+      const response = await axios.post(`${API_URL}/api/login`, { username, password });
       localStorage.setItem('token', response.data.access_token);
       setAuth(true);
       navigate('/dashboard');
@@ -28,7 +29,7 @@ const Login: React.FC<LoginProps> = ({ setAuth }) => {
     <Container component="main" maxWidth="sm">
       <Paper elevation={3} sx={{ padding: 4, marginTop: 8 }}>
         <Typography component="h1" variant="h4" align="center" gutterBottom>
-           DevOps Monitoring Login
+          DevOps Monitoring Login
         </Typography>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <Box component="form" noValidate sx={{ mt: 1 }}>

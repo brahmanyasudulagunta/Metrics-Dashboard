@@ -21,6 +21,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import MetricCharts from './MetricCharts';
+import API_URL from '../config';
 
 interface MetricData {
   time: string;
@@ -121,16 +122,16 @@ const Dashboard: React.FC = () => {
 
     try {
       const [cpuRes, memRes, diskRes, rxRes, txRes, uptimeRes, loadRes, procRes, containersRes, tempRes] = await Promise.all([
-        axios.get(`http://localhost:8000/api/metrics/cpu?start=${start}&end=${end}&step=${step}`, { headers }),
-        axios.get(`http://localhost:8000/api/metrics/memory?start=${start}&end=${end}&step=${step}`, { headers }),
-        axios.get(`http://localhost:8000/api/metrics/disk?start=${start}&end=${end}&step=${step}`, { headers }),
-        axios.get(`http://localhost:8000/api/metrics/network_rx?start=${start}&end=${end}&step=${step}`, { headers }),
-        axios.get(`http://localhost:8000/api/metrics/network_tx?start=${start}&end=${end}&step=${step}`, { headers }),
-        axios.get('http://localhost:8000/api/metrics/uptime', { headers }),
-        axios.get('http://localhost:8000/api/metrics/load', { headers }),
-        axios.get('http://localhost:8000/api/metrics/processes', { headers }),
-        axios.get('http://localhost:8000/api/metrics/containers', { headers }),
-        axios.get('http://localhost:8000/api/metrics/temperature', { headers }),
+        axios.get(`${API_URL}/api/metrics/cpu?start=${start}&end=${end}&step=${step}`, { headers }),
+        axios.get(`${API_URL}/api/metrics/memory?start=${start}&end=${end}&step=${step}`, { headers }),
+        axios.get(`${API_URL}/api/metrics/disk?start=${start}&end=${end}&step=${step}`, { headers }),
+        axios.get(`${API_URL}/api/metrics/network_rx?start=${start}&end=${end}&step=${step}`, { headers }),
+        axios.get(`${API_URL}/api/metrics/network_tx?start=${start}&end=${end}&step=${step}`, { headers }),
+        axios.get(`${API_URL}/api/metrics/uptime`, { headers }),
+        axios.get(`${API_URL}/api/metrics/load`, { headers }),
+        axios.get(`${API_URL}/api/metrics/processes`, { headers }),
+        axios.get(`${API_URL}/api/metrics/containers`, { headers }),
+        axios.get(`${API_URL}/api/metrics/temperature`, { headers }),
       ]);
       setCpuData(cpuRes.data);
       setMemData(memRes.data);

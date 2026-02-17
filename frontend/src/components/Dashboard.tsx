@@ -77,7 +77,11 @@ const getStatusColor = (value: number, thresholds = { warning: 60, critical: 80 
   return { color: '#4caf50', label: 'Healthy', bgColor: '#e8f5e9' };
 };
 
-const Dashboard: React.FC = () => {
+interface DashboardProps {
+  onLogout: () => void;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [cpuData, setCpuData] = useState<MetricData[]>([]);
   const [memData, setMemData] = useState<MetricData[]>([]);
   const [diskData, setDiskData] = useState<MetricData[]>([]);
@@ -93,18 +97,12 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [tabValue, setTabValue] = useState(0);
-  const [darkMode, setDarkMode] = useState(false);
+  // darkMode state removed - strict dark mode enforced
   const [timeRange, setTimeRange] = useState('1h');
   const [exportAnchor, setExportAnchor] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
 
-  const theme = createTheme({
-    palette: {
-      mode: darkMode ? 'dark' : 'light',
-      primary: { main: '#1976d2' },
-      secondary: { main: '#dc004e' },
-    },
-  });
+  // Theme definition removed - using global theme from App.tsx
 
   const getTimeRangeParams = () => {
     const range = TIME_RANGES.find(r => r.value === timeRange) || TIME_RANGES[0];
@@ -161,10 +159,11 @@ const Dashboard: React.FC = () => {
 
   const handleRefresh = () => fetchMetrics();
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    onLogout();
     navigate('/login');
   };
-  const toggleDarkMode = () => setDarkMode(!darkMode);
+
+  // toggleDarkMode function removed
   const getCurrentValue = (data: MetricData[]) => data.length > 0 ? data[data.length - 1].value : 0;
 
   // Export to CSV
@@ -216,147 +215,143 @@ const Dashboard: React.FC = () => {
   const diskStatus = getStatusColor(getCurrentValue(diskData), THRESHOLDS.disk);
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Container maxWidth="lg" sx={{ mt: 4, pb: 4 }}>
-        {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-          <Typography variant="h4" component="h1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><DashboardIcon fontSize="large" /> Metrics Dashboard</Typography>
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-            <FormControl size="small" sx={{ minWidth: 140 }}>
-              <InputLabel>Time Range</InputLabel>
-              <Select value={timeRange} label="Time Range" onChange={(e) => setTimeRange(e.target.value)}>
-                {TIME_RANGES.map(range => (
-                  <MenuItem key={range.value} value={range.value}>{range.label}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <Button variant="outlined" startIcon={<DownloadIcon />} onClick={(e) => setExportAnchor(e.currentTarget)}>Export</Button>
-            <Menu anchorEl={exportAnchor} open={Boolean(exportAnchor)} onClose={() => setExportAnchor(null)}>
-              <MenuItem onClick={exportToCSV}>Export as CSV</MenuItem>
-              <MenuItem onClick={exportToJSON}>Export as JSON</MenuItem>
-            </Menu>
-            <IconButton onClick={toggleDarkMode} color="inherit">
-              {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
-            </IconButton>
-            <Button variant="contained" startIcon={<RefreshIcon />} onClick={handleRefresh} disabled={loading}>Refresh</Button>
-            <Button variant="outlined" color="error" startIcon={<LogoutIcon />} onClick={handleLogout}>Logout</Button>
-          </Box>
+    // ThemeProvider and CssBaseline removed - handled in App.tsx
+    <Container maxWidth="lg" sx={{ mt: 4, pb: 4 }}>
+      {/* Header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <Typography variant="h4" component="h1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><DashboardIcon fontSize="large" /> Metrics Dashboard</Typography>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+          <FormControl size="small" sx={{ minWidth: 140 }}>
+            <InputLabel>Time Range</InputLabel>
+            <Select value={timeRange} label="Time Range" onChange={(e) => setTimeRange(e.target.value)}>
+              {TIME_RANGES.map(range => (
+                <MenuItem key={range.value} value={range.value}>{range.label}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Button variant="outlined" startIcon={<DownloadIcon />} onClick={(e) => setExportAnchor(e.currentTarget)}>Export</Button>
+          <Menu anchorEl={exportAnchor} open={Boolean(exportAnchor)} onClose={() => setExportAnchor(null)}>
+            <MenuItem onClick={exportToCSV}>Export as CSV</MenuItem>
+            <MenuItem onClick={exportToJSON}>Export as JSON</MenuItem>
+          </Menu>
+          {/* Toggle button removed */}
+          <Button variant="contained" startIcon={<RefreshIcon />} onClick={handleRefresh} disabled={loading}>Refresh</Button>
+          <Button variant="outlined" color="error" startIcon={<LogoutIcon />} onClick={handleLogout}>Logout</Button>
         </Box>
+      </Box>
 
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        {/* System Info Cards */}
-        <Paper elevation={2} sx={{ p: 2, mb: 3, bgcolor: darkMode ? 'grey.900' : 'grey.100' }}>
-          <Typography variant="h6" gutterBottom>System Overview</Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-            <Card sx={{ flex: '1 1 180px', bgcolor: darkMode ? 'grey.800' : 'white' }}>
-              <CardContent>
-                <Typography color="textSecondary" variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><AccessTimeIcon fontSize="small" /> Uptime</Typography>
-                <Typography variant="h6">{systemInfo.uptime}</Typography>
-              </CardContent>
-            </Card>
-            <Card sx={{ flex: '1 1 180px', bgcolor: darkMode ? 'grey.800' : 'white' }}>
-              <CardContent>
-                <Typography color="textSecondary" variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><SpeedIcon fontSize="small" /> Load Average</Typography>
-                <Typography variant="h6">{systemInfo.load1} / {systemInfo.load5} / {systemInfo.load15}</Typography>
-                <Typography variant="caption" color="textSecondary">1 / 5 / 15 min</Typography>
-              </CardContent>
-            </Card>
-            <Card sx={{ flex: '1 1 180px', bgcolor: darkMode ? 'grey.800' : 'white' }}>
-              <CardContent>
-                <Typography color="textSecondary" variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><SettingsIcon fontSize="small" /> Processes</Typography>
-                <Typography variant="h6">{systemInfo.processesRunning} running</Typography>
-                <Typography variant="caption" color="textSecondary">{systemInfo.processesBlocked} blocked</Typography>
-              </CardContent>
-            </Card>
-            <Card sx={{ flex: '1 1 180px', bgcolor: darkMode ? 'grey.800' : 'white' }}>
-              <CardContent>
-                <Typography color="textSecondary" variant="body2">Containers</Typography>
-                <Typography variant="h6">{containers.length} running</Typography>
-              </CardContent>
-            </Card>
-            <Card sx={{ flex: '1 1 180px', bgcolor: darkMode ? 'grey.800' : 'white', borderLeft: systemInfo.temperature.available ? (systemInfo.temperature.value > 80 ? '4px solid #f44336' : '4px solid #4caf50') : 'none' }}>
-              <CardContent>
-                <Typography color="textSecondary" variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><ThermostatIcon fontSize="small" /> Temperature</Typography>
-                <Typography variant="h6">
-                  {systemInfo.temperature.available ? `${systemInfo.temperature.value}°C` : 'N/A'}
-                </Typography>
-                <Typography variant="caption" color={systemInfo.temperature.available ? (systemInfo.temperature.value > 80 ? 'error' : 'textSecondary') : 'textSecondary'}>
-                  {systemInfo.temperature.status}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Box>
-        </Paper>
-
-        {/* Metric Cards with Alert Thresholds */}
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 4 }}>
-          <Card sx={{ flex: '1 1 200px', transition: '0.3s', '&:hover': { boxShadow: 6 }, borderLeft: `4px solid ${cpuStatus.color}` }}>
+      {/* System Info Cards */}
+      <Paper elevation={2} sx={{ p: 2, mb: 3, bgcolor: 'background.paper' }}>
+        <Typography variant="h6" gutterBottom>System Overview</Typography>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+          <Card sx={{ flex: '1 1 180px' }}>
             <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                <Typography color="textSecondary" variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><MemoryIcon fontSize="small" /> CPU Usage</Typography>
-                <Chip label={cpuStatus.label} size="small" sx={{ bgcolor: cpuStatus.color, color: 'white', fontWeight: 'bold' }} />
-              </Box>
-              <Typography variant="h5">{getCurrentValue(cpuData).toFixed(1)}%</Typography>
-              <Typography variant="caption" color="textSecondary">Warn: {THRESHOLDS.cpu.warning}% | Crit: {THRESHOLDS.cpu.critical}%</Typography>
+              <Typography color="textSecondary" variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><AccessTimeIcon fontSize="small" /> Uptime</Typography>
+              <Typography variant="h6">{systemInfo.uptime}</Typography>
             </CardContent>
           </Card>
-          <Card sx={{ flex: '1 1 200px', transition: '0.3s', '&:hover': { boxShadow: 6 }, borderLeft: `4px solid ${memStatus.color}` }}>
+          <Card sx={{ flex: '1 1 180px' }}>
             <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                <Typography color="textSecondary" variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><StorageIcon fontSize="small" /> Memory Usage</Typography>
-                <Chip label={memStatus.label} size="small" sx={{ bgcolor: memStatus.color, color: 'white', fontWeight: 'bold' }} />
-              </Box>
-              <Typography variant="h5">{getCurrentValue(memData).toFixed(1)}%</Typography>
-              <Typography variant="caption" color="textSecondary">Warn: {THRESHOLDS.memory.warning}% | Crit: {THRESHOLDS.memory.critical}%</Typography>
+              <Typography color="textSecondary" variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><SpeedIcon fontSize="small" /> Load Average</Typography>
+              <Typography variant="h6">{systemInfo.load1} / {systemInfo.load5} / {systemInfo.load15}</Typography>
+              <Typography variant="caption" color="textSecondary">1 / 5 / 15 min</Typography>
             </CardContent>
           </Card>
-          <Card sx={{ flex: '1 1 200px', transition: '0.3s', '&:hover': { boxShadow: 6 }, borderLeft: `4px solid ${diskStatus.color}` }}>
+          <Card sx={{ flex: '1 1 180px' }}>
             <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                <Typography color="textSecondary" variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><DiscFullIcon fontSize="small" /> Disk Usage</Typography>
-                <Chip label={diskStatus.label} size="small" sx={{ bgcolor: diskStatus.color, color: 'white', fontWeight: 'bold' }} />
-              </Box>
-              <Typography variant="h5">{getCurrentValue(diskData).toFixed(1)}%</Typography>
-              <Typography variant="caption" color="textSecondary">Warn: {THRESHOLDS.disk.warning}% | Crit: {THRESHOLDS.disk.critical}%</Typography>
+              <Typography color="textSecondary" variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><SettingsIcon fontSize="small" /> Processes</Typography>
+              <Typography variant="h6">{systemInfo.processesRunning} running</Typography>
+              <Typography variant="caption" color="textSecondary">{systemInfo.processesBlocked} blocked</Typography>
             </CardContent>
           </Card>
-          <Card sx={{ flex: '1 1 200px', transition: '0.3s', '&:hover': { boxShadow: 6 } }}>
+          <Card sx={{ flex: '1 1 180px' }}>
             <CardContent>
-              <Typography color="textSecondary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><WifiIcon fontSize="small" /> Network RX</Typography>
-              <Typography variant="h5">{formatBytes(getCurrentValue(rxData))}</Typography>
+              <Typography color="textSecondary" variant="body2">Containers</Typography>
+              <Typography variant="h6">{containers.length} running</Typography>
+            </CardContent>
+          </Card>
+          <Card sx={{ flex: '1 1 180px', borderLeft: systemInfo.temperature.available ? (systemInfo.temperature.value > 80 ? '4px solid #f44336' : '4px solid #4caf50') : 'none' }}>
+            <CardContent>
+              <Typography color="textSecondary" variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><ThermostatIcon fontSize="small" /> Temperature</Typography>
+              <Typography variant="h6">
+                {systemInfo.temperature.available ? `${systemInfo.temperature.value}°C` : 'N/A'}
+              </Typography>
+              <Typography variant="caption" color={systemInfo.temperature.available ? (systemInfo.temperature.value > 80 ? 'error' : 'textSecondary') : 'textSecondary'}>
+                {systemInfo.temperature.status}
+              </Typography>
             </CardContent>
           </Card>
         </Box>
+      </Paper>
 
-        {/* Tabs for Charts */}
-        <Box sx={{ width: '100%' }}>
-          <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)} aria-label="metrics tabs">
-            <Tab label="System" />
-            <Tab label="Network" />
-            <Tab label="Containers" />
-          </Tabs>
-          {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-              <CircularProgress />
+      {/* Metric Cards with Alert Thresholds */}
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 4 }}>
+        <Card sx={{ flex: '1 1 200px', transition: '0.3s', '&:hover': { boxShadow: 6 }, borderLeft: `4px solid ${cpuStatus.color}` }}>
+          <CardContent>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+              <Typography color="textSecondary" variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><MemoryIcon fontSize="small" /> CPU Usage</Typography>
+              <Chip label={cpuStatus.label} size="small" sx={{ bgcolor: cpuStatus.color, color: 'white', fontWeight: 'bold' }} />
             </Box>
-          ) : (
-            <MetricCharts
-              cpuData={cpuData}
-              memData={memData}
-              diskData={diskData}
-              rxData={rxData}
-              txData={txData}
-              containers={containers}
-              thresholds={THRESHOLDS}
-              tabValue={tabValue}
-              darkMode={darkMode}
-            />
-          )}
-        </Box>
-      </Container>
-    </ThemeProvider>
+            <Typography variant="h5">{getCurrentValue(cpuData).toFixed(1)}%</Typography>
+            <Typography variant="caption" color="textSecondary">Warn: {THRESHOLDS.cpu.warning}% | Crit: {THRESHOLDS.cpu.critical}%</Typography>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: '1 1 200px', transition: '0.3s', '&:hover': { boxShadow: 6 }, borderLeft: `4px solid ${memStatus.color}` }}>
+          <CardContent>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+              <Typography color="textSecondary" variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><StorageIcon fontSize="small" /> Memory Usage</Typography>
+              <Chip label={memStatus.label} size="small" sx={{ bgcolor: memStatus.color, color: 'white', fontWeight: 'bold' }} />
+            </Box>
+            <Typography variant="h5">{getCurrentValue(memData).toFixed(1)}%</Typography>
+            <Typography variant="caption" color="textSecondary">Warn: {THRESHOLDS.memory.warning}% | Crit: {THRESHOLDS.memory.critical}%</Typography>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: '1 1 200px', transition: '0.3s', '&:hover': { boxShadow: 6 }, borderLeft: `4px solid ${diskStatus.color}` }}>
+          <CardContent>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+              <Typography color="textSecondary" variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><DiscFullIcon fontSize="small" /> Disk Usage</Typography>
+              <Chip label={diskStatus.label} size="small" sx={{ bgcolor: diskStatus.color, color: 'white', fontWeight: 'bold' }} />
+            </Box>
+            <Typography variant="h5">{getCurrentValue(diskData).toFixed(1)}%</Typography>
+            <Typography variant="caption" color="textSecondary">Warn: {THRESHOLDS.disk.warning}% | Crit: {THRESHOLDS.disk.critical}%</Typography>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: '1 1 200px', transition: '0.3s', '&:hover': { boxShadow: 6 } }}>
+          <CardContent>
+            <Typography color="textSecondary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><WifiIcon fontSize="small" /> Network RX</Typography>
+            <Typography variant="h5">{formatBytes(getCurrentValue(rxData))}</Typography>
+          </CardContent>
+        </Card>
+      </Box>
+
+      {/* Tabs for Charts */}
+      <Box sx={{ width: '100%' }}>
+        <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)} aria-label="metrics tabs">
+          <Tab label="System" />
+          <Tab label="Network" />
+          <Tab label="Containers" />
+        </Tabs>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <MetricCharts
+            cpuData={cpuData}
+            memData={memData}
+            diskData={diskData}
+            rxData={rxData}
+            txData={txData}
+            containers={containers}
+            thresholds={THRESHOLDS}
+            tabValue={tabValue}
+
+          />
+        )}
+      </Box>
+    </Container>
   );
 };
 

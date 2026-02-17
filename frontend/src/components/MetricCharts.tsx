@@ -31,7 +31,8 @@ interface MetricChartsProps {
         disk: ChartThresholds;
     };
     tabValue: number;
-    darkMode: boolean;
+
+    // darkMode prop removed
 }
 
 // Helper function to format bytes to human-readable units
@@ -95,7 +96,7 @@ const MetricCharts: React.FC<MetricChartsProps> = ({
     containers,
     thresholds,
     tabValue,
-    darkMode
+
 }) => {
     return (
         <Box sx={{ mt: 2 }}>
@@ -189,7 +190,7 @@ const MetricCharts: React.FC<MetricChartsProps> = ({
                     <TableContainer component={Paper}>
                         <Table>
                             <TableHead>
-                                <TableRow sx={{ bgcolor: darkMode ? 'grey.800' : 'grey.100' }}>
+                                <TableRow sx={{ bgcolor: 'background.paper' }}>
                                     <TableCell><strong>Container</strong></TableCell>
                                     <TableCell><strong>CPU Usage</strong></TableCell>
                                     <TableCell><strong>Memory (MB)</strong></TableCell>

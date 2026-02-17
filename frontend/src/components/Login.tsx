@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { TextField, Button, Container, Typography, Paper, Box, Alert } from '@mui/material';
+import { TextField, Button, Container, Typography, Paper, Box, Alert, Avatar } from '@mui/material';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import API_URL from '../config';
@@ -26,13 +27,16 @@ const Login: React.FC<LoginProps> = ({ setAuth }) => {
   };
 
   return (
-    <Container component="main" maxWidth="sm">
-      <Paper elevation={3} sx={{ padding: 4, marginTop: 8 }}>
-        <Typography component="h1" variant="h4" align="center" gutterBottom>
-          DevOps Monitoring Login
+    <Container component="main" maxWidth="xs">
+      <Paper elevation={0} sx={{ padding: 4, marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', border: '1px solid #2c3235' }}>
+        <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
+          <LockOutlinedIcon />
+        </Avatar>
+        <Typography component="h1" variant="h5" color="textPrimary">
+          Sign in
         </Typography>
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        <Box component="form" noValidate sx={{ mt: 1 }}>
+        {error && <Alert severity="error" sx={{ mb: 2, width: '100%', mt: 2 }}>{error}</Alert>}
+        <Box component="form" noValidate sx={{ mt: 1, width: '100%' }}>
           <TextField
             margin="normal"
             required

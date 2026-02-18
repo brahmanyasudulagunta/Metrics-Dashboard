@@ -8,8 +8,8 @@ python-dotenv
 prometheus-fastapi-instrumentator
 sqlalchemy
 python-multipart
-passlib
-bcrypt
+passlib[bcrypt]
+bcrypt==4.0.1
 slowapi
 psutil
 psycopg2-binary

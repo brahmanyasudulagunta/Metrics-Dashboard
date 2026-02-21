@@ -3,7 +3,11 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import Login from './components/Login';
 import Signup from './components/Signup';
-import Dashboard from './components/Dashboard';
+import MainLayout from './components/layout/MainLayout';
+import Overview from './pages/Overview';
+import Network from './pages/Network';
+import Containers from './pages/Containers';
+import Settings from './pages/Settings';
 import theme from './theme';
 
 const App: React.FC = () => {
@@ -22,8 +26,16 @@ const App: React.FC = () => {
           <Routes>
             <Route path="/login" element={<Login setAuth={setIsAuthenticated} />} />
             <Route path="/signup" element={<Signup />} />
-            <Route path="/dashboard" element={isAuthenticated ? <Dashboard onLogout={handleLogout} /> : <Navigate to="/login" />} />
-            <Route path="/" element={<Navigate to="/login" />} />
+
+            {/* Protected Routes wrapped in MainLayout */}
+            <Route path="/dashboard" element={isAuthenticated ? <MainLayout onLogout={handleLogout} /> : <Navigate to="/login" />}>
+              <Route index element={<Overview />} />
+              <Route path="network" element={<Network />} />
+              <Route path="containers" element={<Containers />} />
+              <Route path="settings" element={<Settings />} />
+            </Route>
+
+            <Route path="/" element={<Navigate to="/dashboard" />} />
           </Routes>
         </div>
       </Router>

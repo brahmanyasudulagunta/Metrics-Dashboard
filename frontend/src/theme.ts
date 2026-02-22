@@ -1,81 +1,84 @@
-import { createTheme } from '@mui/material';
+import { createTheme, Theme } from '@mui/material';
 
-// Grafana-inspired dark theme
-const theme = createTheme({
-    palette: {
-        mode: 'dark',
-        background: {
-            default: '#111217', // Deep blue-gray background
-            paper: '#181b1f',   // Slightly lighter panels
+export const getTheme = (mode: 'light' | 'dark'): Theme => {
+    return createTheme({
+        palette: {
+            mode,
+            ...(mode === 'dark'
+                ? {
+                    // Softened Dark Mode
+                    background: {
+                        default: '#1a1d24',
+                        paper: '#22262e',
+                    },
+                    primary: { main: '#5794f2' },
+                    secondary: { main: '#f2495c' },
+                    success: { main: '#73bf69' },
+                    warning: { main: '#ff9830' },
+                    info: { main: '#5794f2' },
+                    text: {
+                        primary: '#e6edf3',
+                        secondary: '#8b949e',
+                    },
+                    divider: '#30363d',
+                }
+                : {
+                    // Light Mode
+                    background: {
+                        default: '#f6f8fa',
+                        paper: '#ffffff',
+                    },
+                    primary: { main: '#0969da' },
+                    secondary: { main: '#cf222e' },
+                    success: { main: '#2da44e' },
+                    warning: { main: '#bf8700' },
+                    info: { main: '#0969da' },
+                    text: {
+                        primary: '#24292f',
+                        secondary: '#57606a',
+                    },
+                    divider: '#d0d7de',
+                }),
         },
-        primary: {
-            main: '#5794f2', // Vibrant blue
+        typography: {
+            fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+            h4: { fontWeight: 600 },
+            h6: { fontWeight: 500 },
         },
-        secondary: {
-            main: '#f2495c', // Vibrant red
-        },
-        success: {
-            main: '#73bf69', // Vibrant green
-        },
-        warning: {
-            main: '#ff9830', // Vibrant orange
-        },
-        info: {
-            main: '#5794f2',
-        },
-        text: {
-            primary: '#ccccdc', // High readability light gray
-            secondary: '#9fa5b5', // Muted gray
-        },
-    },
-    typography: {
-        fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-        h4: {
-            fontWeight: 600,
-            color: '#e5e5eb',
-        },
-        h6: {
-            fontWeight: 500,
-            color: '#ccccdc',
-        },
-    },
-    components: {
-        MuiCssBaseline: {
-            styleOverrides: {
-                body: {
-                    backgroundColor: '#111217',
-                    color: '#ccccdc',
+        components: {
+            MuiCssBaseline: {
+                styleOverrides: {
+                    body: {
+                        transition: 'background-color 0.3s ease, color 0.3s ease',
+                    },
+                },
+            },
+            MuiCard: {
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        backgroundImage: 'none',
+                        border: `1px solid ${theme.palette.divider}`,
+                        boxShadow: 'none',
+                    }),
+                },
+            },
+            MuiPaper: {
+                styleOverrides: {
+                    root: {
+                        backgroundImage: 'none',
+                    },
+                },
+            },
+            MuiAppBar: {
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        borderBottom: `1px solid ${theme.palette.divider}`,
+                        backgroundImage: 'none',
+                        boxShadow: 'none',
+                    }),
                 },
             },
         },
-        MuiCard: {
-            styleOverrides: {
-                root: {
-                    backgroundColor: '#181b1f',
-                    backgroundImage: 'none',
-                    border: '1px solid #2c3235',
-                    boxShadow: 'none',
-                },
-            },
-        },
-        MuiPaper: {
-            styleOverrides: {
-                root: {
-                    backgroundColor: '#181b1f',
-                    backgroundImage: 'none',
-                },
-            },
-        },
-        MuiAppBar: {
-            styleOverrides: {
-                root: {
-                    backgroundColor: '#181b1f',
-                    borderBottom: '1px solid #2c3235',
-                    backgroundImage: 'none',
-                },
-            },
-        },
-    },
-});
+    });
+};
 
-export default theme;

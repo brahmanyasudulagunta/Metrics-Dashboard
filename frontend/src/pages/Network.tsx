@@ -82,7 +82,7 @@ const Network: React.FC = () => {
             </Box>
 
             <MetricCharts
-                cpuData={[]} memData={[]} diskData={[]} containers={[]} // unused
+                cpuData={[]} memData={[]} diskData={[]} // unused
                 rxData={rxData}
                 txData={txData}
                 thresholds={{ cpu: { warning: 0, critical: 0 }, memory: { warning: 0, critical: 0 }, disk: { warning: 0, critical: 0 } }}

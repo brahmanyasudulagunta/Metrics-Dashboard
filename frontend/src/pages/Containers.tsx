@@ -68,7 +68,14 @@ const Containers: React.FC = () => {
                                 return (
                                     <TableRow key={container.name} hover>
                                         <TableCell>
-                                            <Typography fontWeight="medium">{container.name}</Typography>
+                                            <Typography
+                                                fontWeight="medium"
+                                                color="primary"
+                                                sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                                                onClick={() => window.location.href = `/dashboard/containers/${encodeURIComponent(container.name)}`}
+                                            >
+                                                {container.name}
+                                            </Typography>
                                         </TableCell>
                                         <TableCell>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

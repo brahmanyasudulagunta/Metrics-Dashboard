@@ -22,15 +22,6 @@ const Settings: React.FC = () => {
                             <Switch edge="end" defaultChecked color="primary" />
                         </ListItemSecondaryAction>
                     </ListItem>
-                    <ListItem disableGutters>
-                        <ListItemText
-                            primary="Strict Dark Mode"
-                            secondary="Enforce a deep contrast dark mode across all views."
-                        />
-                        <ListItemSecondaryAction>
-                            <Switch edge="end" defaultChecked disabled color="primary" />
-                        </ListItemSecondaryAction>
-                    </ListItem>
                 </List>
             </Paper>
 

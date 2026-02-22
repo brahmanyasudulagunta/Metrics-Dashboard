@@ -185,7 +185,7 @@ const Overview: React.FC = () => {
                 cpuData={cpuData}
                 memData={memData}
                 diskData={diskData}
-                rxData={[]} txData={[]} containers={[]} // Unused in System tab
+                rxData={[]} txData={[]} // Unused in System tab
                 thresholds={THRESHOLDS}
                 tabValue={0} // System
             />

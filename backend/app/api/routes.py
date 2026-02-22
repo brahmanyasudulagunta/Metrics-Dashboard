@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from app.services.prometheus_client import PromClient
+from app.services.docker_client import get_container_logs, get_container_processes
 from app.api.auth import create_access_token, get_current_user
 from app.db.database import SessionLocal
 from app.db.models import User
@@ -229,12 +230,17 @@ def container_list(current_user: str = Depends(get_current_user)):
 @router.get("/metrics/container_cpu")
 def container_cpu(
     current_user: str = Depends(get_current_user),
+    container_name: str = None,
     start: int = None,
     end: int = None,
     step: str = '15s'
 ):
     """Get container CPU usage over time"""
-    q = 'sum(rate(container_cpu_usage_seconds_total{name!=""}[1m])) by (name) * 100'
+    if container_name:
+        # Sanitize somewhat or assume valid Prometheus literal
+        q = f'sum(rate(container_cpu_usage_seconds_total{{name="{container_name}"}}[1m])) by (name) * 100'
+    else:
+        q = 'sum(rate(container_cpu_usage_seconds_total{name!=""}[1m])) by (name) * 100'
     return client.query_range_for_chart(q, start=start, end=end, step=step)
 
 
@@ -244,14 +250,68 @@ def container_cpu(
 @router.get("/metrics/container_memory")
 def container_memory(
     current_user: str = Depends(get_current_user),
+    container_name: str = None,
     start: int = None,
     end: int = None,
     step: str = '15s'
 ):
     """Get container memory usage over time (in MB)"""
-    q = 'container_memory_usage_bytes{name!=""} / 1024 / 1024'
+    if container_name:
+        q = f'container_memory_usage_bytes{{name="{container_name}"}} / 1024 / 1024'
+    else:
+        q = 'container_memory_usage_bytes{name!=""} / 1024 / 1024'
     return client.query_range_for_chart(q, start=start, end=end, step=step)
 
+# ---------------------
+# CONTAINER LOGS (Live)
+# ---------------------
+@router.get("/metrics/container_logs")
+def container_logs(
+    container_name: str,
+    tail: int = 200,
+    current_user: str = Depends(get_current_user)
+):
+    """Get live logs for a specific container"""
+    logs = get_container_logs(container_name, tail)
+    return {"logs": logs}
+
+# ---------------------
+# CONTAINER PROCESSES (Live)
+# ---------------------
+@router.get("/metrics/container_processes")
+def container_processes(
+    container_name: str,
+    current_user: str = Depends(get_current_user)
+):
+    """Get live processes (`docker top`) for a specific container"""
+    processes = get_container_processes(container_name)
+    if isinstance(processes, dict) and "error" in processes:
+        raise HTTPException(status_code=500, detail=processes["error"])
+    return processes
+
+
+# ---------------------
+# RAW PromQL EXPLORER
+# ---------------------
+@router.get("/metrics/query_range_raw")
+def query_range_raw(
+    query: str,
+    current_user: str = Depends(get_current_user),
+    start: int = None,
+    end: int = None,
+    step: str = '15s'
+):
+    """Execute raw PromQL and return the raw Prometheus JSON response"""
+    if not query:
+        raise HTTPException(status_code=400, detail="Query parameter is required")
+    
+    try:
+        # We use a helper from PromClient that returns the raw JSON 
+        # instead of attempting to transform it, because custom queries 
+        # can have completely unpredictable shapes (vectors, matrices, etc.)
+        return client.query_range_result_like_prom(query, start=start, end=end, step=step)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/signup")
 def signup(data: SignupRequest):

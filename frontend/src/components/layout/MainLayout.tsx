@@ -1,13 +1,13 @@
 import React from 'react';
-import { Box, Drawer, AppBar, Toolbar, Typography, List, ListItem, ListItemIcon, ListItemText, ListItemButton, IconButton, Divider } from '@mui/material';
+import { Box, AppBar, Toolbar, Typography, Button, IconButton, Divider, Tooltip as MuiTooltip } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import ExploreIcon from '@mui/icons-material/Explore';
 import StorageIcon from '@mui/icons-material/Storage';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
 import WifiIcon from '@mui/icons-material/Wifi';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
-
-const drawerWidth = 240;
 
 interface MainLayoutProps {
     onLogout: () => void;
@@ -18,10 +18,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ onLogout }) => {
     const location = useLocation();
 
     const menuItems = [
-        { text: 'Overview', icon: <DashboardIcon />, path: '/dashboard' },
-        { text: 'Network', icon: <WifiIcon />, path: '/dashboard/network' },
-        { text: 'Containers', icon: <StorageIcon />, path: '/dashboard/containers' },
-        { text: 'Settings', icon: <SettingsIcon />, path: '/dashboard/settings' },
+        { text: 'Overview', icon: <DashboardIcon sx={{ mr: 1, fontSize: 20 }} />, path: '/dashboard' },
+        { text: 'Explore', icon: <ExploreIcon sx={{ mr: 1, fontSize: 20 }} />, path: '/dashboard/explore' },
+        { text: 'Network', icon: <WifiIcon sx={{ mr: 1, fontSize: 20 }} />, path: '/dashboard/network' },
+        { text: 'Containers', icon: <StorageIcon sx={{ mr: 1, fontSize: 20 }} />, path: '/dashboard/containers' },
     ];
 
     const handleNavigation = (path: string) => {
@@ -29,72 +29,77 @@ const MainLayout: React.FC<MainLayoutProps> = ({ onLogout }) => {
     };
 
     return (
-        <Box sx={{ display: 'flex' }}>
-            {/* App Bar (Header) */}
-            <AppBar position="fixed" sx={{ width: `calc(100% - ${drawerWidth}px)`, ml: `${drawerWidth}px`, boxShadow: 'none', borderBottom: 1, borderColor: 'divider' }}>
-                <Toolbar>
-                    <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-                        Metrics Platform
-                    </Typography>
-                    <IconButton color="inherit" onClick={onLogout} title="Logout">
-                        <LogoutIcon />
-                    </IconButton>
+        <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'background.default' }}>
+            {/* Top Navigation Bar */}
+            <AppBar position="fixed" sx={{
+                bgcolor: '#161b22',
+                borderBottom: '1px solid #30363d',
+                boxShadow: 'none',
+                zIndex: (theme) => theme.zIndex.drawer + 1
+            }}>
+                <Toolbar variant="dense" sx={{ minHeight: 56, px: 2, display: 'flex', justifyContent: 'space-between' }}>
+
+                    {/* Left: Logo and Navigation Links */}
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1, mr: 4, cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
+                            Metrics Platform
+                        </Typography>
+
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            {menuItems.map((item) => {
+                                const isSelected = location.pathname === item.path || (location.pathname === '/' && item.path === '/dashboard');
+                                return (
+                                    <Button
+                                        key={item.text}
+                                        onClick={() => handleNavigation(item.path)}
+                                        sx={{
+                                            color: isSelected ? '#fff' : '#c9d1d9',
+                                            bgcolor: isSelected ? '#1f6feb' : 'transparent',
+                                            textTransform: 'none',
+                                            fontWeight: isSelected ? 'bold' : 'normal',
+                                            px: 2,
+                                            py: 0.5,
+                                            borderRadius: 1,
+                                            '&:hover': {
+                                                bgcolor: isSelected ? '#388bfd' : '#21262d'
+                                            }
+                                        }}
+                                    >
+                                        {item.icon}
+                                        {item.text}
+                                    </Button>
+                                );
+                            })}
+                        </Box>
+                    </Box>
+
+                    {/* Right: Actions */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <MuiTooltip title="Settings">
+                            <IconButton size="small" sx={{ color: '#8b949e' }} onClick={() => navigate('/dashboard/settings')}>
+                                <SettingsIcon fontSize="small" />
+                            </IconButton>
+                        </MuiTooltip>
+
+                        <MuiTooltip title="Help">
+                            <IconButton size="small" sx={{ color: '#8b949e' }}>
+                                <HelpOutlineIcon fontSize="small" />
+                            </IconButton>
+                        </MuiTooltip>
+
+                        <Divider orientation="vertical" flexItem sx={{ mx: 1, my: 1.5, borderColor: '#30363d' }} />
+
+                        <MuiTooltip title="Logout">
+                            <IconButton size="small" sx={{ color: '#f85149' }} onClick={onLogout}>
+                                <LogoutIcon fontSize="small" />
+                            </IconButton>
+                        </MuiTooltip>
+                    </Box>
                 </Toolbar>
             </AppBar>
 
-            {/* Sidebar (Drawer) */}
-            <Drawer
-                sx={{
-                    width: drawerWidth,
-                    flexShrink: 0,
-                    '& .MuiDrawer-paper': {
-                        width: drawerWidth,
-                        boxSizing: 'border-box',
-                        borderRight: 1,
-                        borderColor: 'divider',
-                        backgroundColor: 'background.paper'
-                    },
-                }}
-                variant="permanent"
-                anchor="left"
-            >
-                <Toolbar sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Typography variant="h6" fontWeight="bold" color="primary">Metrics Hub</Typography>
-                </Toolbar>
-                <Divider />
-                <List sx={{ pt: 2 }}>
-                    {menuItems.map((item) => {
-                        const isSelected = location.pathname === item.path || (location.pathname === '/' && item.path === '/dashboard');
-                        return (
-                            <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
-                                <ListItemButton
-                                    selected={isSelected}
-                                    onClick={() => handleNavigation(item.path)}
-                                    sx={{
-                                        mx: 1,
-                                        borderRadius: 1,
-                                        '&.Mui-selected': {
-                                            backgroundColor: 'rgba(87, 148, 242, 0.1)',
-                                            color: 'primary.main',
-                                            '& .MuiListItemIcon-root': {
-                                                color: 'primary.main',
-                                            }
-                                        }
-                                    }}
-                                >
-                                    <ListItemIcon sx={{ minWidth: 40, color: 'text.secondary' }}>
-                                        {item.icon}
-                                    </ListItemIcon>
-                                    <ListItemText primary={item.text} primaryTypographyProps={{ fontWeight: isSelected ? 600 : 400 }} />
-                                </ListItemButton>
-                            </ListItem>
-                        );
-                    })}
-                </List>
-            </Drawer>
-
             {/* Main Content Area */}
-            <Box component="main" sx={{ flexGrow: 1, p: 3, pt: 10, minHeight: '100vh', backgroundColor: 'background.default' }}>
+            <Box component="main" sx={{ flexGrow: 1, p: 3, pt: { xs: 8, sm: 9 } }}>
                 <Outlet /> {/* Renders the active nested route */}
             </Box>
         </Box>

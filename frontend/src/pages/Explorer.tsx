@@ -215,7 +215,7 @@ const Explorer: React.FC = () => {
 
             {/* Content Area - Tabbed Layout */}
             {chartData.length > 0 && (
-                <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', height: 'calc(100vh - 200px)' }}>
+                <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                     <Box sx={{ borderBottom: 1, borderColor: '#30363d', mb: 2 }}>
                         <Tabs
                             value={viewMode}
@@ -233,7 +233,7 @@ const Explorer: React.FC = () => {
 
                     {/* Left: Graph */}
                     {viewMode === 'graph' && (
-                        <Paper sx={{ flexGrow: 1, p: 2, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                        <Paper sx={{ flexGrow: 1, p: 2, display: 'flex', flexDirection: 'column', height: 500 }}>
                             <Box sx={{ flexGrow: 1, minHeight: 0 }}>
                                 <ResponsiveContainer width="100%" height="100%">
                                     <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
@@ -267,8 +267,8 @@ const Explorer: React.FC = () => {
 
                     {/* Right: Series Data Table */}
                     {viewMode === 'table' && (
-                        <Paper sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                            <TableContainer sx={{ flexGrow: 1, overflowY: 'auto' }}>
+                        <Paper sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                            <TableContainer sx={{ flexGrow: 1 }}>
                                 <Table size="small" stickyHeader>
                                     <TableHead>
                                         <TableRow>

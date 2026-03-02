@@ -9,6 +9,8 @@ import Explore from './pages/Explorer';
 import Network from './pages/Network';
 import Containers from './pages/Containers';
 import ContainerDetail from './pages/ContainerDetail';
+import Kubernetes from './pages/Kubernetes';
+import PodDetail from './pages/PodDetail';
 import Settings from './pages/Settings';
 import { getTheme } from './theme';
 
@@ -38,6 +40,8 @@ const App: React.FC = () => {
               <Route path="network" element={<Network />} />
               <Route path="containers" element={<Containers />} />
               <Route path="containers/:id" element={<ContainerDetail />} />
+              <Route path="kubernetes" element={<Kubernetes />} />
+              <Route path="kubernetes/:namespace/:name" element={<PodDetail />} />
               <Route path="settings" element={<Settings />} />
             </Route>
 

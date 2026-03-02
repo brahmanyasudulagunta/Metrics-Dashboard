@@ -14,3 +14,4 @@ slowapi
 psutil
 psycopg2-binary
 docker==7.1.0
+kubernetes

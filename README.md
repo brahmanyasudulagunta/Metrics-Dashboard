@@ -6,6 +6,7 @@ A **DevOps monitoring dashboard** built with FastAPI, React, and Prometheus. Mon
 
 - **System Metrics** — CPU, Memory, Disk, Load Average, Uptime, Temperature
 - **Container Monitoring** — Live container stats, logs, and processes
+- **Kubernetes Monitoring** — Native K8s client for Namespaces, Pods (with live logs), Deployments, and Services
 - **Network** — RX / TX throughput with time-series charts
 - **PromQL Explorer** — Run raw Prometheus queries and visualize results
 - **Auth** — JWT login with rate limiting
@@ -15,7 +16,7 @@ A **DevOps monitoring dashboard** built with FastAPI, React, and Prometheus. Mon
 | | |
 |---|---|
 | **Frontend** | React 19, TypeScript, MUI 7, Recharts |
-| **Backend** | Python 3.12, FastAPI, SQLAlchemy |
+| **Backend** | Python 3.12, FastAPI, SQLAlchemy, Kubernetes Client |
 | **Monitoring** | Prometheus, Node Exporter, cAdvisor |
 | **Database** | PostgreSQL 16 |
 | **Infra** | Docker Compose, Nginx |

@@ -6,6 +6,7 @@ import StorageIcon from '@mui/icons-material/Storage';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
 import WifiIcon from '@mui/icons-material/Wifi';
+import CloudIcon from '@mui/icons-material/Cloud';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 
@@ -22,6 +23,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ onLogout }) => {
         { text: 'Explore', icon: <ExploreIcon sx={{ mr: 1, fontSize: 20 }} />, path: '/dashboard/explore' },
         { text: 'Network', icon: <WifiIcon sx={{ mr: 1, fontSize: 20 }} />, path: '/dashboard/network' },
         { text: 'Containers', icon: <StorageIcon sx={{ mr: 1, fontSize: 20 }} />, path: '/dashboard/containers' },
+        { text: 'Kubernetes', icon: <CloudIcon sx={{ mr: 1, fontSize: 20 }} />, path: '/dashboard/kubernetes' },
     ];
 
     const handleNavigation = (path: string) => {

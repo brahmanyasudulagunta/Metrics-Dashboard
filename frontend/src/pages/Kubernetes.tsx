@@ -34,7 +34,7 @@ const Kubernetes: React.FC = () => {
     useEffect(() => {
         const init = async () => {
             try {
-                const res = await axios.get(`${API_URL}/api/k8s/namespaces`, { headers });
+                const res = await axios.get(`${API_URL}/api/metrics/namespaces`, { headers });
                 setNamespaces(res.data.namespaces || []);
             } catch (err) {
                 setError('Failed to connect to Kubernetes cluster.');
@@ -51,9 +51,9 @@ const Kubernetes: React.FC = () => {
         setError('');
         try {
             const [podRes, depRes, svcRes] = await Promise.all([
-                axios.get(`${API_URL}/api/k8s/pods?namespace=${selectedNs}`, { headers }),
-                axios.get(`${API_URL}/api/k8s/deployments?namespace=${selectedNs}`, { headers }),
-                axios.get(`${API_URL}/api/k8s/services?namespace=${selectedNs}`, { headers }),
+                axios.get(`${API_URL}/api/metrics/pods?namespace=${selectedNs}`, { headers }),
+                axios.get(`${API_URL}/api/metrics/deployments?namespace=${selectedNs}`, { headers }),
+                axios.get(`${API_URL}/api/metrics/services?namespace=${selectedNs}`, { headers }),
             ]);
             setPods(podRes.data.pods || []);
             setDeployments(depRes.data.deployments || []);

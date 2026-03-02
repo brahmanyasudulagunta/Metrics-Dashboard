@@ -16,7 +16,7 @@ const PodDetail: React.FC = () => {
     const fetchLogs = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get(`${API_URL}/api/k8s/pods/${namespace}/${name}/logs?tail=500`, {
+            const res = await axios.get(`${API_URL}/api/metrics/pods/${namespace}/${name}/logs?tail=500`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setLogs(res.data.logs || 'No logs found.');

@@ -41,8 +41,9 @@ services:
   backend:
     image: backend-metrics:v1
     container_name: backend-metrics
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    networks:
+      - default
+      - kind
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ~/.kube:/root/.kube:ro
@@ -76,3 +77,8 @@ services:
 
 volumes:
   pgdata:
+
+networks:
+  default:
+  kind:
+    external: true

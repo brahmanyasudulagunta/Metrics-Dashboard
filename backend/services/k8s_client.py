@@ -21,14 +21,15 @@ class K8sClient:
                 # Fallback to local kubeconfig
                 config.load_kube_config()
                 
-                # Rewrite localhost to host.docker.internal for docker access
+                # Rewrite localhost to gitops-cluster-control-plane:6443 for docker access
                 c = client.Configuration.get_default_copy()
                 if c.host and ("127.0.0.1" in c.host or "localhost" in c.host):
-                    c.host = c.host.replace("127.0.0.1", "host.docker.internal").replace("localhost", "host.docker.internal")
+                    import re
+                    c.host = re.sub(r'(https?://)(127\.0\.0\.1|localhost):\d+', r'\1gitops-cluster-control-plane:6443', c.host)
                     c.verify_ssl = False
                     client.Configuration.set_default(c)
                     
-                logger.info("Loaded local kubeconfig (rewritten for docker).")
+                logger.info("Loaded local kubeconfig (rewritten for kind cluster access).")
             except Exception as e:
                 logger.error(f"Failed to load Kubernetes config: {e}")
                 return

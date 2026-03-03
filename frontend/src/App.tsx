@@ -2,11 +2,10 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import Login from './components/Login';
-import Signup from './components/Signup';
+import ChangePassword from './components/ChangePassword';
 import MainLayout from './components/layout/MainLayout';
 import Overview from './pages/Overview';
 import Explore from './pages/Explorer';
-import Network from './pages/Network';
 import Containers from './pages/Containers';
 import ContainerDetail from './pages/ContainerDetail';
 import Kubernetes from './pages/Kubernetes';
@@ -31,13 +30,12 @@ const App: React.FC = () => {
         <div className="App">
           <Routes>
             <Route path="/login" element={<Login setAuth={setIsAuthenticated} />} />
-            <Route path="/signup" element={<Signup />} />
+            <Route path="/change-password" element={<ChangePassword />} />
 
             {/* Protected Routes wrapped in MainLayout */}
             <Route path="/dashboard" element={isAuthenticated ? <MainLayout onLogout={handleLogout} /> : <Navigate to="/login" />}>
               <Route index element={<Overview />} />
               <Route path="explore" element={<Explore />} />
-              <Route path="network" element={<Network />} />
               <Route path="containers" element={<Containers />} />
               <Route path="containers/:id" element={<ContainerDetail />} />
               <Route path="kubernetes" element={<Kubernetes />} />

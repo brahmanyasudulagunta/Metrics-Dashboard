@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Typography, Box, CircularProgress, Alert, Button, Divider } from '@mui/material';
+import { Typography, Box, CircularProgress, Alert, Button, Paper } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import TerminalIcon from '@mui/icons-material/Terminal';
 import axios from 'axios';
 import API_URL from '../config';
 
@@ -16,7 +17,7 @@ const PodDetail: React.FC = () => {
     const fetchLogs = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get(`${API_URL}/api/metrics/pods/${namespace}/${name}/logs?tail=500`, {
+            const res = await axios.get(`${API_URL}/api/metrics/pods/${namespace}/${name}/logs?tail=100`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setLogs(res.data.logs || 'No logs found.');
@@ -56,29 +57,39 @@ const PodDetail: React.FC = () => {
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-            <Typography sx={{ fontSize: '0.8rem', fontWeight: 500, color: 'text.secondary', mb: 1.5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Live Logs (Last 500 lines)
-            </Typography>
-
-            <Box sx={{
-                flexGrow: 1,
-                bgcolor: '#0d1117',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: 1,
-                p: 2,
-                overflowY: 'auto',
-                fontFamily: '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace',
-                fontSize: '0.85rem',
-                color: '#e6edf3',
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-all'
-            }}>
-                {loading && !logs ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress size={24} /></Box>
-                ) : (
-                    logs
-                )}
-                <div ref={logsEndRef} />
+            <Box sx={{ width: '100%', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                <Paper sx={{
+                    bgcolor: '#0d1117',
+                    border: '1px solid #30363d',
+                    flexGrow: 1,
+                    display: 'flex',
+                    flexDirection: 'column'
+                }}>
+                    <Box sx={{ bgcolor: '#161b22', p: 1.5, borderBottom: '1px solid #30363d', display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <TerminalIcon fontSize="small" sx={{ color: '#8b949e' }} />
+                        <Typography variant="subtitle2" sx={{ color: '#8b949e', fontFamily: 'monospace' }}>
+                            Pod Logs (tail -n 100)
+                        </Typography>
+                    </Box>
+                    <Box sx={{
+                        p: 2,
+                        overflowY: 'auto',
+                        flexGrow: 1,
+                        fontFamily: 'monospace',
+                        fontSize: '0.85rem',
+                        color: '#e6edf3',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-all',
+                        lineHeight: 1.5
+                    }}>
+                        {loading && !logs ? (
+                            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress size={24} /></Box>
+                        ) : (
+                            logs
+                        )}
+                        <div ref={logsEndRef} />
+                    </Box>
+                </Paper>
             </Box>
         </Box>
     );

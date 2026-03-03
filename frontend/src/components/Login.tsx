@@ -20,7 +20,12 @@ const Login: React.FC<LoginProps> = ({ setAuth }) => {
       const response = await axios.post(`${API_URL}/api/login`, { username, password });
       localStorage.setItem('token', response.data.access_token);
       setAuth(true);
-      navigate('/dashboard');
+
+      if (response.data.must_change_password) {
+        navigate('/change-password');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError('Login failed. Please check your credentials.');
     }
@@ -33,7 +38,10 @@ const Login: React.FC<LoginProps> = ({ setAuth }) => {
           <LockOutlinedIcon />
         </Avatar>
         <Typography component="h1" variant="h5" color="textPrimary">
-          Sign in
+          Metrics Platform
+        </Typography>
+        <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+          Sign in to continue
         </Typography>
         {error && <Alert severity="error" sx={{ mb: 2, width: '100%', mt: 2 }}>{error}</Alert>}
         <Box component="form" noValidate sx={{ mt: 1, width: '100%' }}>
@@ -62,13 +70,6 @@ const Login: React.FC<LoginProps> = ({ setAuth }) => {
             onClick={handleLogin}
           >
             Login
-          </Button>
-          <Button
-            fullWidth
-            variant="outlined"
-            onClick={() => navigate('/signup')}
-          >
-            Don't have an account? Sign Up
           </Button>
         </Box>
       </Paper>

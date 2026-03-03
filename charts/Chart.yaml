@@ -1,0 +1,8 @@
+---
+apiVersion: v2
+name: metrics
+description: A Kubernetes-native monitoring dashboard with Prometheus metrics and live cluster visibility
+type: application
+version: 0.1.0
+appVersion: "v1"
+

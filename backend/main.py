@@ -24,7 +24,7 @@ init_db()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001").split(","),
+    allow_origins = os.getenv("CORS_ORIGINS", "*").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -36,6 +36,16 @@ app.include_router(k8s_router, prefix="/api")
 @app.get("/")
 def root():
     return {"status":"ok"}
+
+@app.get("/healthz")
+def health():
+    """Liveness probe — is the process alive?"""
+    return {"status": "ok"}
+
+@app.get("/readyz")
+def ready():
+    """Readiness probe — is the app ready to serve traffic?"""
+    return {"status": "ready"}
 
 instrumentator = Instrumentator(should_group_status_codes=False)
 instrumentator.instrument(app).expose(app, endpoint="/metrics")

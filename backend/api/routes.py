@@ -1,22 +1,33 @@
+import os
+import logging
 from fastapi import APIRouter, HTTPException, Depends
 from services.prometheus_client import PromClient
-from services.docker_client import get_container_logs, get_container_processes
 from api.auth import create_access_token, get_current_user
 from db.database import SessionLocal
 from db.models import User
 from api.security import hash_password, verify_password
 from pydantic import BaseModel
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 client = PromClient()
 
-class SignupRequest(BaseModel):
-    username: str
-    password: str
+# Detect runtime: in K8s, use container/pod labels; in Docker, use name label
+IS_K8S = os.getenv("K8S_MODE", "auto") == "incluster"
+
+try:
+    from services.docker_client import get_container_logs, get_container_processes
+    HAS_DOCKER = True
+except Exception:
+    HAS_DOCKER = False
 
 class LoginRequest(BaseModel):
     username: str
     password: str
+
+class ChangePasswordRequest(BaseModel):
+    new_password: str
+
 
 
 # ---------------------
@@ -174,51 +185,68 @@ def system_temperature(current_user: str = Depends(get_current_user)):
 
 
 # ---------------------
-# CONTAINER LIST (cAdvisor)
+# CONTAINER LIST (cAdvisor metrics)
 # ---------------------
 @router.get("/metrics/containers")
 def container_list(current_user: str = Depends(get_current_user)):
-    """Get list of running containers with basic stats"""
+    """Get container resource metrics (CPU/Memory).
+    Docker mode: shows Docker containers. K8s mode: shows pod containers.
+    """
     try:
-        # Use irate for more accurate real-time CPU usage
-        # Filter out empty container names and POD containers
-        cpu_query = 'sum(irate(container_cpu_usage_seconds_total{name!="",name!~".*POD.*"}[2m])) by (name) * 100'
-        mem_query = 'container_memory_usage_bytes{name!="",name!~".*POD.*"}'
+        if IS_K8S:
+            ns_exclude = 'namespace!~"kube-system|kube-public|kube-node-lease"'
+            cpu_query = f'sum(irate(container_cpu_usage_seconds_total{{container!="",container!="POD",image!="",{ns_exclude}}}[2m])) by (container,pod,namespace) * 100'
+            mem_query = f'sum(container_memory_usage_bytes{{container!="",container!="POD",image!="",{ns_exclude}}}) by (container,pod,namespace)'
+        else:
+            cpu_query = 'sum(irate(container_cpu_usage_seconds_total{name!="",name!~".*POD.*"}[2m])) by (name) * 100'
+            mem_query = 'container_memory_usage_bytes{name!="",name!~".*POD.*"}'
         
         cpu_res = client.query(cpu_query)
         mem_res = client.query(mem_query)
         
         containers = {}
         
-        # Process Memory data first (more reliable)
         for result in mem_res.get("data", {}).get("result", []):
-            name = result.get("metric", {}).get("name", "")
-            if not name or name == "":
+            metric = result.get("metric", {})
+            if IS_K8S:
+                name = metric.get("container", "")
+                pod = metric.get("pod", "")
+                display = f"{name} ({pod})" if pod else name
+                key = f"{metric.get('namespace','')}/{pod}/{name}"
+            else:
+                display = metric.get("name", "")
+                key = display
+            if not display:
                 continue
             try:
                 mem_bytes = float(result["value"][1])
                 mem_mb = mem_bytes / (1024 * 1024)
-                containers[name] = {"name": name, "cpu": 0.0, "memory": round(mem_mb, 2)}
+                containers[key] = {"name": display, "cpu": 0.0, "memory": round(mem_mb, 2)}
             except (IndexError, ValueError, KeyError):
                 continue
         
-        # Process CPU data
         for result in cpu_res.get("data", {}).get("result", []):
-            name = result.get("metric", {}).get("name", "")
-            if not name or name == "":
+            metric = result.get("metric", {})
+            if IS_K8S:
+                name = metric.get("container", "")
+                pod = metric.get("pod", "")
+                display = f"{name} ({pod})" if pod else name
+                key = f"{metric.get('namespace','')}/{pod}/{name}"
+            else:
+                display = metric.get("name", "")
+                key = display
+            if not display:
                 continue
             try:
                 cpu = float(result["value"][1])
-                if name in containers:
-                    containers[name]["cpu"] = round(cpu, 2)
+                if key in containers:
+                    containers[key]["cpu"] = round(cpu, 2)
                 else:
-                    containers[name] = {"name": name, "cpu": round(cpu, 2), "memory": 0.0}
+                    containers[key] = {"name": display, "cpu": round(cpu, 2), "memory": 0.0}
             except (IndexError, ValueError, KeyError):
                 continue
         
-        # Filter out containers with no meaningful data
         valid_containers = [c for c in containers.values() if c["memory"] > 0 or c["cpu"] > 0]
-        
         return {"containers": valid_containers}
     except Exception as e:
         return {"containers": [], "error": str(e)}
@@ -236,11 +264,17 @@ def container_cpu(
     step: str = '15s'
 ):
     """Get container CPU usage over time"""
-    if container_name:
-        # Sanitize somewhat or assume valid Prometheus literal
-        q = f'sum(rate(container_cpu_usage_seconds_total{{name="{container_name}"}}[1m])) by (name) * 100'
+    if IS_K8S:
+        ns_exclude = 'namespace!~"kube-system|kube-public|kube-node-lease"'
+        if container_name:
+            q = f'sum(rate(container_cpu_usage_seconds_total{{container="{container_name}",image!="",{ns_exclude}}}[1m])) by (container,pod) * 100'
+        else:
+            q = f'sum(rate(container_cpu_usage_seconds_total{{container!="",container!="POD",image!="",{ns_exclude}}}[1m])) by (container,pod) * 100'
     else:
-        q = 'sum(rate(container_cpu_usage_seconds_total{name!=""}[1m])) by (name) * 100'
+        if container_name:
+            q = f'sum(rate(container_cpu_usage_seconds_total{{name="{container_name}"}}[1m])) by (name) * 100'
+        else:
+            q = 'sum(rate(container_cpu_usage_seconds_total{name!=""}[1m])) by (name) * 100'
     return client.query_range_for_chart(q, start=start, end=end, step=step)
 
 
@@ -256,10 +290,17 @@ def container_memory(
     step: str = '15s'
 ):
     """Get container memory usage over time (in MB)"""
-    if container_name:
-        q = f'container_memory_usage_bytes{{name="{container_name}"}} / 1024 / 1024'
+    if IS_K8S:
+        ns_exclude = 'namespace!~"kube-system|kube-public|kube-node-lease"'
+        if container_name:
+            q = f'sum(container_memory_usage_bytes{{container="{container_name}",image!="",{ns_exclude}}}) by (container,pod) / 1024 / 1024'
+        else:
+            q = f'sum(container_memory_usage_bytes{{container!="",container!="POD",image!="",{ns_exclude}}}) by (container,pod) / 1024 / 1024'
     else:
-        q = 'container_memory_usage_bytes{name!=""} / 1024 / 1024'
+        if container_name:
+            q = f'container_memory_usage_bytes{{name="{container_name}"}} / 1024 / 1024'
+        else:
+            q = 'container_memory_usage_bytes{name!=""} / 1024 / 1024'
     return client.query_range_for_chart(q, start=start, end=end, step=step)
 
 # ---------------------
@@ -272,8 +313,11 @@ def container_logs(
     current_user: str = Depends(get_current_user)
 ):
     """Get live logs for a specific container"""
-    logs = get_container_logs(container_name, tail)
-    return {"logs": logs}
+    if HAS_DOCKER and not IS_K8S:
+        logs = get_container_logs(container_name, tail)
+        return {"logs": logs}
+    else:
+        return {"logs": "Container logs are available via the Kubernetes tab in K8s mode."}
 
 # ---------------------
 # CONTAINER PROCESSES (Live)
@@ -284,10 +328,13 @@ def container_processes(
     current_user: str = Depends(get_current_user)
 ):
     """Get live processes (`docker top`) for a specific container"""
-    processes = get_container_processes(container_name)
-    if isinstance(processes, dict) and "error" in processes:
-        raise HTTPException(status_code=500, detail=processes["error"])
-    return processes
+    if HAS_DOCKER and not IS_K8S:
+        processes = get_container_processes(container_name)
+        if isinstance(processes, dict) and "error" in processes:
+            raise HTTPException(status_code=500, detail=processes["error"])
+        return processes
+    else:
+        return {"titles": ["INFO"], "processes": [["Container processes available via kubectl exec in K8s mode."]]}
 
 
 # ---------------------
@@ -320,30 +367,6 @@ def query_range_raw(
             )
         raise HTTPException(status_code=500, detail=error_msg)
 
-@router.post("/signup")
-def signup(data: SignupRequest):
-    db = SessionLocal()
-    username = data.username
-    password = data.password
-
-    if not username or not password:
-        db.close()
-        raise HTTPException(status_code=400, detail="Missing fields")
-
-    if db.query(User).filter(User.username == username).first():
-        db.close()
-        raise HTTPException(status_code=400, detail="User already exists")
-
-    user = User(
-        username=username,
-        hashed_password=hash_password(password)
-    )
-    db.add(user)
-    db.commit()
-    db.close()
-
-    return {"message": "User created successfully"}
-
 @router.post("/login")
 def login(data: LoginRequest):
     db = SessionLocal()
@@ -357,5 +380,24 @@ def login(data: LoginRequest):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_access_token({"sub": username})
+    must_change = user.must_change_password if user.must_change_password else False
     db.close()
-    return {"access_token": token, "token_type": "bearer"}
+    return {"access_token": token, "token_type": "bearer", "must_change_password": must_change}
+
+
+@router.post("/change-password")
+def change_password(
+    data: ChangePasswordRequest,
+    current_user: str = Depends(get_current_user)
+):
+    db = SessionLocal()
+    user = db.query(User).filter(User.username == current_user).first()
+    if not user:
+        db.close()
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.hashed_password = hash_password(data.new_password)
+    user.must_change_password = False
+    db.commit()
+    db.close()
+    return {"message": "Password updated successfully"}

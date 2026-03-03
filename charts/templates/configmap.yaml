@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+data:
+  PROMETHEUS_URL: {{ .Values.prometheus.url | quote }}
+  SQLALCHEMY_DATABASE_URL: "sqlite:///data/metrics.db"
+  K8S_MODE: "incluster"
+  CORS_ORIGINS: "*"
+  JWT_ALGORITHM: "HS256"
+  DEV_MODE: {{ .Values.backend.devMode | quote }}
+

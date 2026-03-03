@@ -1,10 +1,10 @@
 # Stage 1: Build the React app
 FROM node:24-alpine AS build
 WORKDIR /app
-COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile
+COPY package.json package-lock.json ./
+RUN npm ci
 COPY . .
-RUN yarn build
+RUN npm run build
 
 # Stage 2: Serve with nginx (inside THIS container only)
 FROM nginx:alpine

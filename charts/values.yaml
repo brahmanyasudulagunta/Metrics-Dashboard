@@ -1,0 +1,30 @@
+backend:
+  image: ashrith2727/backend-metrics
+  tag: "v1"
+  replicas: 1
+  adminPassword: admin
+  jwtSecret: supersecretkey
+  devMode: false
+
+frontend:
+  image: ashrith2727/frontend-metrics
+  tag: "v1"
+  replicas: 1
+
+prometheus:
+  url: http://prometheus-server:9090
+
+persistence:
+  enabled: true
+  size: 1Gi
+  storageClass: ""
+
+ingress:
+  enabled: false
+  host: metrics.example.com
+  className: nginx
+
+serviceAccount:
+  create: true
+  name: ""
+

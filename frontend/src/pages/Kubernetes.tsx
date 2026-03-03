@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Typography, Box, CircularProgress, Alert, Tabs, Tab, Select, MenuItem, FormControl, Divider, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+import { Typography, Box, CircularProgress, Alert, Tabs, Tab, Select, MenuItem, FormControl, Divider, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
 import axios from 'axios';
 import API_URL from '../config';
 import { useNavigate } from 'react-router-dom';
@@ -68,7 +68,11 @@ const Kubernetes: React.FC = () => {
     const formatDate = (isoString: string | null) => {
         if (!isoString) return 'N/A';
         const d = new Date(isoString);
-        return d.toLocaleString();
+        const diff = Math.floor((Date.now() - d.getTime()) / 1000);
+        if (diff < 60) return `${diff}s`;
+        if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)}h ${Math.floor((diff % 3600) / 60)}m`;
+        return `${Math.floor(diff / 86400)}d ${Math.floor((diff % 86400) / 3600)}h`;
     };
 
     if (loading && pods.length === 0) {
@@ -95,23 +99,7 @@ const Kubernetes: React.FC = () => {
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-            {/* Flat stats header */}
-            <Box sx={{ display: 'flex', gap: 6, mb: 4 }}>
-                <Box>
-                    <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary', textTransform: 'uppercase', mb: 0.5, letterSpacing: '0.05em' }}>Pods</Typography>
-                    <Typography sx={{ fontWeight: 700, fontSize: '2rem', lineHeight: 1 }}>{pods.length}</Typography>
-                </Box>
-                <Divider orientation="vertical" flexItem sx={{ borderColor: 'rgba(255,255,255,0.06)' }} />
-                <Box>
-                    <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary', textTransform: 'uppercase', mb: 0.5, letterSpacing: '0.05em' }}>Deployments</Typography>
-                    <Typography sx={{ fontWeight: 700, fontSize: '2rem', lineHeight: 1 }}>{deployments.length}</Typography>
-                </Box>
-                <Divider orientation="vertical" flexItem sx={{ borderColor: 'rgba(255,255,255,0.06)' }} />
-                <Box>
-                    <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary', textTransform: 'uppercase', mb: 0.5, letterSpacing: '0.05em' }}>Services</Typography>
-                    <Typography sx={{ fontWeight: 700, fontSize: '2rem', lineHeight: 1 }}>{services.length}</Typography>
-                </Box>
-            </Box>
+
 
             <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
                 <Tabs value={tab} onChange={(e, v) => setTab(v)}>
@@ -122,22 +110,26 @@ const Kubernetes: React.FC = () => {
             </Box>
 
             {tab === 0 && (
-                <TableContainer>
+                <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
                     <Table size="small">
                         <TableHead>
-                            <TableRow>
-                                <TableCell>Name</TableCell>
-                                <TableCell>Namespace</TableCell>
-                                <TableCell>Status</TableCell>
-                                <TableCell>Restarts</TableCell>
-                                <TableCell>Node</TableCell>
-                                <TableCell>Age</TableCell>
+                            <TableRow sx={{ bgcolor: 'rgba(255, 255, 255, 0.05)' }}>
+                                <TableCell><strong>Name</strong></TableCell>
+                                <TableCell><strong>Namespace</strong></TableCell>
+                                <TableCell><strong>Status</strong></TableCell>
+                                <TableCell><strong>Restarts</strong></TableCell>
+                                <TableCell><strong>Node</strong></TableCell>
+                                <TableCell><strong>Age</strong></TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {pods.map(pod => (
                                 <TableRow key={pod.name} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/dashboard/kubernetes/${pod.namespace}/${pod.name}`)}>
-                                    <TableCell sx={{ fontWeight: 500, color: '#58a6ff' }}>{pod.name}</TableCell>
+                                    <TableCell>
+                                        <Typography fontWeight="medium" color="primary" sx={{ '&:hover': { textDecoration: 'underline' } }}>
+                                            {pod.name}
+                                        </Typography>
+                                    </TableCell>
                                     <TableCell sx={{ color: 'text.secondary' }}>{pod.namespace}</TableCell>
                                     <TableCell sx={{ color: getStatusColor(pod.status), fontWeight: 600 }}>{pod.status}</TableCell>
                                     <TableCell>{pod.restarts}</TableCell>
@@ -152,20 +144,24 @@ const Kubernetes: React.FC = () => {
             )}
 
             {tab === 1 && (
-                <TableContainer>
+                <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
                     <Table size="small">
                         <TableHead>
-                            <TableRow>
-                                <TableCell>Name</TableCell>
-                                <TableCell>Namespace</TableCell>
-                                <TableCell>Ready</TableCell>
-                                <TableCell>Age</TableCell>
+                            <TableRow sx={{ bgcolor: 'rgba(255, 255, 255, 0.05)' }}>
+                                <TableCell><strong>Name</strong></TableCell>
+                                <TableCell><strong>Namespace</strong></TableCell>
+                                <TableCell><strong>Ready</strong></TableCell>
+                                <TableCell><strong>Age</strong></TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {deployments.map(d => (
                                 <TableRow key={d.name}>
-                                    <TableCell sx={{ fontWeight: 500 }}>{d.name}</TableCell>
+                                    <TableCell>
+                                        <Typography fontWeight="medium" color="primary">
+                                            {d.name}
+                                        </Typography>
+                                    </TableCell>
                                     <TableCell sx={{ color: 'text.secondary' }}>{d.namespace}</TableCell>
                                     <TableCell>{d.ready}</TableCell>
                                     <TableCell sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>{formatDate(d.age)}</TableCell>
@@ -178,21 +174,25 @@ const Kubernetes: React.FC = () => {
             )}
 
             {tab === 2 && (
-                <TableContainer>
+                <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
                     <Table size="small">
                         <TableHead>
-                            <TableRow>
-                                <TableCell>Name</TableCell>
-                                <TableCell>Namespace</TableCell>
-                                <TableCell>Type</TableCell>
-                                <TableCell>Cluster IP</TableCell>
-                                <TableCell>Ports</TableCell>
+                            <TableRow sx={{ bgcolor: 'rgba(255, 255, 255, 0.05)' }}>
+                                <TableCell><strong>Name</strong></TableCell>
+                                <TableCell><strong>Namespace</strong></TableCell>
+                                <TableCell><strong>Type</strong></TableCell>
+                                <TableCell><strong>Cluster IP</strong></TableCell>
+                                <TableCell><strong>Ports</strong></TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {services.map(s => (
                                 <TableRow key={s.name}>
-                                    <TableCell sx={{ fontWeight: 500 }}>{s.name}</TableCell>
+                                    <TableCell>
+                                        <Typography fontWeight="medium" color="primary">
+                                            {s.name}
+                                        </Typography>
+                                    </TableCell>
                                     <TableCell sx={{ color: 'text.secondary' }}>{s.namespace}</TableCell>
                                     <TableCell>{s.type}</TableCell>
                                     <TableCell sx={{ fontFamily: 'monospace' }}>{s.cluster_ip}</TableCell>

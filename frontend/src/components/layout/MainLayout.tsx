@@ -21,7 +21,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ onLogout }) => {
     const menuItems = [
         { text: 'Overview', icon: <DashboardIcon sx={{ mr: 1, fontSize: 20 }} />, path: '/dashboard' },
         { text: 'Explore', icon: <ExploreIcon sx={{ mr: 1, fontSize: 20 }} />, path: '/dashboard/explore' },
-        { text: 'Network', icon: <WifiIcon sx={{ mr: 1, fontSize: 20 }} />, path: '/dashboard/network' },
         { text: 'Containers', icon: <StorageIcon sx={{ mr: 1, fontSize: 20 }} />, path: '/dashboard/containers' },
         { text: 'Kubernetes', icon: <CloudIcon sx={{ mr: 1, fontSize: 20 }} />, path: '/dashboard/kubernetes' },
     ];

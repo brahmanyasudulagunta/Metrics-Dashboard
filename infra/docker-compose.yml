@@ -39,7 +39,7 @@ services:
       - /dev/kmsg
 
   backend:
-    image: backend-metrics:v1
+    image: ashrith2727/backend-metrics:v1
     container_name: backend-metrics
     networks:
       - default
@@ -47,36 +47,24 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ~/.kube:/root/.kube:ro
+      - backend-data:/app/data
     env_file:
       - ../backend/.env
     ports:
       - "8000:8000"
     depends_on:
       - prometheus
-      - postgres
 
   frontend:
-    image: frontend-metrics:v1
+    image: ashrith2727/frontend-metrics:v1
     container_name: frontend-metrics
     ports:
       - "3001:3001"
     depends_on:
       - backend
 
-  postgres:
-    image: postgres:16-alpine
-    container_name: postgres-metrics
-    environment:
-      POSTGRES_USER: krishna
-      POSTGRES_PASSWORD: 1729
-      POSTGRES_DB: postgresdb
-    ports:
-      - "5433:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
 volumes:
-  pgdata:
+  backend-data:
 
 networks:
   default:

@@ -1,8 +1,11 @@
 import logging
+import os
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 
 logger = logging.getLogger(__name__)
+
+K8S_MODE = os.getenv("K8S_MODE", "auto")  # "incluster", "local", or "auto"
 
 class K8sClient:
     def __init__(self):
@@ -12,30 +15,49 @@ class K8sClient:
         self._initialize_client()
 
     def _initialize_client(self):
-        try:
-            # Try in-cluster config first (if running inside a pod)
-            config.load_incluster_config()
-            logger.info("Loaded Kubernetes in-cluster config.")
-        except config.ConfigException:
+        if K8S_MODE == "incluster":
             try:
-                # Fallback to local kubeconfig
-                config.load_kube_config()
-                
-                # Rewrite localhost to gitops-cluster-control-plane:6443 for docker access
-                c = client.Configuration.get_default_copy()
-                if c.host and ("127.0.0.1" in c.host or "localhost" in c.host):
-                    import re
-                    c.host = re.sub(r'(https?://)(127\.0\.0\.1|localhost):\d+', r'\1gitops-cluster-control-plane:6443', c.host)
-                    c.verify_ssl = False
-                    client.Configuration.set_default(c)
-                    
-                logger.info("Loaded local kubeconfig (rewritten for kind cluster access).")
+                config.load_incluster_config()
+                logger.info("Loaded Kubernetes in-cluster config.")
             except Exception as e:
-                logger.error(f"Failed to load Kubernetes config: {e}")
+                logger.error(f"Failed to load in-cluster config: {e}")
                 return
+        elif K8S_MODE == "local":
+            self._load_local_config()
+        else:
+            # Auto mode: try in-cluster first, fallback to local
+            try:
+                config.load_incluster_config()
+                logger.info("Loaded Kubernetes in-cluster config.")
+            except config.ConfigException:
+                self._load_local_config()
 
         self.core_api = client.CoreV1Api()
         self.apps_api = client.AppsV1Api()
+
+    def _load_local_config(self):
+        """Load kubeconfig for local/Docker Compose development."""
+        try:
+            config.load_kube_config()
+
+            # Rewrite localhost to Docker-accessible address for Kind clusters
+            k8s_host = os.getenv("K8S_HOST")
+            if k8s_host:
+                c = client.Configuration.get_default_copy()
+                c.host = k8s_host
+                c.verify_ssl = False
+                client.Configuration.set_default(c)
+                logger.info(f"Loaded local kubeconfig (rewritten to {k8s_host}).")
+            else:
+                import re
+                c = client.Configuration.get_default_copy()
+                if c.host and ("127.0.0.1" in c.host or "localhost" in c.host):
+                    c.host = re.sub(r'(https?://)(127\.0\.0\.1|localhost):\d+', r'\1gitops-cluster-control-plane:6443', c.host)
+                    c.verify_ssl = False
+                    client.Configuration.set_default(c)
+                logger.info("Loaded local kubeconfig (auto-rewritten for Kind).")
+        except Exception as e:
+            logger.error(f"Failed to load Kubernetes config: {e}")
 
     def is_connected(self):
         return self.core_api is not None
@@ -134,19 +156,17 @@ class K8sClient:
             else:
                 events = self.core_api.list_namespaced_event(namespace)
                 
-            # Filter for recent events involving pods
             result = []
             for e in events.items:
                 if e.involved_object.kind == "Pod":
                     result.append({
-                        "type": e.type, # Normal or Warning
+                        "type": e.type,
                         "reason": e.reason,
                         "message": e.message,
                         "pod": e.involved_object.name,
                         "time": e.last_timestamp.isoformat() if e.last_timestamp else None
                     })
-            # sort by time descending
             result.sort(key=lambda x: x["time"] or "", reverse=True)
-            return result[:50] # return top 50
+            return result[:50]
         except ApiException as e:
             return {"error": str(e)}

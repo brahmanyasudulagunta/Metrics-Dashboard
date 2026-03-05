@@ -1,6 +1,6 @@
 api:
   image: ashrith2727/backend-metrics
-  tag: "v2"
+  tag: "v1"
   replicas: 1
   adminPassword: admin
   jwtSecret: supersecretkey
@@ -8,7 +8,7 @@ api:
 
 dashboard:
   image: ashrith2727/frontend-metrics
-  tag: "v2"
+  tag: "v1"
   replicas: 1
 
 # External Prometheus (used when monitoring.enabled=false)

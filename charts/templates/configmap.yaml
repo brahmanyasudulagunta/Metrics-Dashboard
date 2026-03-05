@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-config
 data:
-  PROMETHEUS_URL: {{ .Values.prometheus.url | quote }}
+  PROMETHEUS_URL: "http://{{ .Release.Name }}-monitoring-prometheus:9090"
   SQLALCHEMY_DATABASE_URL: "sqlite:///data/metrics.db"
   K8S_MODE: "incluster"
   CORS_ORIGINS: "*"

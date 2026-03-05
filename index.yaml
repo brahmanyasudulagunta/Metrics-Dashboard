@@ -3,7 +3,7 @@ entries:
   metrics:
   - apiVersion: v2
     appVersion: v1
-    created: "2026-03-05T09:55:59.634341339-06:00"
+    created: "2026-03-05T09:57:57.89896347-06:00"
     dependencies:
     - alias: monitoring
       condition: monitoring.enabled
@@ -20,7 +20,7 @@ entries:
     version: 0.2.4
   - apiVersion: v2
     appVersion: v1
-    created: "2026-03-05T09:55:59.593620908-06:00"
+    created: "2026-03-05T09:57:57.859821153-06:00"
     dependencies:
     - alias: monitoring
       condition: monitoring.enabled
@@ -37,7 +37,7 @@ entries:
     version: 0.2.3
   - apiVersion: v2
     appVersion: v1
-    created: "2026-03-05T09:55:59.554124806-06:00"
+    created: "2026-03-05T09:57:57.821613381-06:00"
     dependencies:
     - alias: monitoring
       condition: monitoring.enabled
@@ -54,7 +54,7 @@ entries:
     version: 0.2.2
   - apiVersion: v2
     appVersion: v1
-    created: "2026-03-05T09:55:59.507792644-06:00"
+    created: "2026-03-05T09:57:57.782014274-06:00"
     dependencies:
     - alias: monitoring
       name: kube-prometheus-stack
@@ -68,4 +68,4 @@ entries:
     urls:
     - https://brahmanyasudulagunta.github.io/Metrics/metrics-0.2.1.tgz
     version: 0.2.1
-generated: "2026-03-05T09:55:59.457258188-06:00"
+generated: "2026-03-05T09:57:57.735827837-06:00"

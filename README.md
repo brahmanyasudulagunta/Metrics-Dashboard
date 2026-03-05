@@ -1,8 +1,8 @@
-# 📊 Metrics Dashboard
+# Metrics Dashboard
 
 A Kubernetes-native monitoring dashboard that gives you real-time visibility into system resources, Docker containers, and Kubernetes clusters.
 
-## 🚀 Install via Helm
+## Install via Helm
 
 ### 1. Add the Repository
 ```bash
@@ -33,7 +33,7 @@ helm install metrics metrics/metrics -n metrics --create-namespace \
 
 ---
 
-## 🌐 Access the Dashboard
+## Access the Dashboard
 
 Once installed, port-forward the dashboard to access it locally:
 

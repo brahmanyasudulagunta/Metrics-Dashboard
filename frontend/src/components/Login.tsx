@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { TextField, Button, Container, Typography, Paper, Box, Alert, Avatar } from '@mui/material';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import MetricsLogo from './MetricsLogo';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import API_URL from '../config';
@@ -34,17 +34,17 @@ const Login: React.FC<LoginProps> = ({ setAuth }) => {
   return (
     <Container component="main" maxWidth="xs">
       <Paper elevation={0} sx={{ padding: 4, marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', border: '1px solid #2c3235' }}>
-        <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
-          <LockOutlinedIcon />
+        <Avatar sx={{ m: 1, bgcolor: 'transparent', width: 56, height: 56 }}>
+          <MetricsLogo sx={{ fontSize: 48, filter: 'drop-shadow(0 0 6px rgba(0,229,255,0.6))' }} />
         </Avatar>
         <Typography component="h1" variant="h5" color="textPrimary">
-          Metrics Platform
+          Metrics
         </Typography>
         <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
           Sign in to continue
         </Typography>
         {error && <Alert severity="error" sx={{ mb: 2, width: '100%', mt: 2 }}>{error}</Alert>}
-        <Box component="form" noValidate sx={{ mt: 1, width: '100%' }}>
+        <Box component="form" noValidate sx={{ mt: 1, width: '100%' }} onSubmit={(e) => { e.preventDefault(); handleLogin(); }}>
           <TextField
             margin="normal"
             required
@@ -66,8 +66,8 @@ const Login: React.FC<LoginProps> = ({ setAuth }) => {
           <Button
             fullWidth
             variant="contained"
+            type="submit"
             sx={{ mt: 3, mb: 2 }}
-            onClick={handleLogin}
           >
             Login
           </Button>

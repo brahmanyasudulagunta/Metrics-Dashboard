@@ -38,7 +38,7 @@ const Containers: React.FC = () => {
 
     return (
         <Box>
-            <Typography variant="h4" gutterBottom>Containers</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 600 }} gutterBottom>Containers</Typography>
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
             <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>

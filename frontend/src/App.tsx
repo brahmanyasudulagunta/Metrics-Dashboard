@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import Login from './components/Login';
@@ -12,11 +12,29 @@ import Kubernetes from './pages/Kubernetes';
 import PodDetail from './pages/PodDetail';
 import Settings from './pages/Settings';
 import { getTheme } from './theme';
+import axios from 'axios';
+import API_URL from './config';
 
 const theme = getTheme('dark');
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!localStorage.getItem('token'));
+
+  // Validate stored token on app load
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    axios.get(`${API_URL}/api/metrics/system`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).catch((err) => {
+      // Only logout on 401 (expired/invalid token), not on network errors
+      if (err.response?.status === 401) {
+        localStorage.removeItem('token');
+        setIsAuthenticated(false);
+      }
+    });
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token');

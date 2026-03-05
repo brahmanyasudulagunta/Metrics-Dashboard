@@ -8,6 +8,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import WifiIcon from '@mui/icons-material/Wifi';
 import CloudIcon from '@mui/icons-material/Cloud';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import MetricsLogo from '../MetricsLogo';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 
 interface MainLayoutProps {
@@ -38,12 +39,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ onLogout }) => {
                 boxShadow: 'none',
                 zIndex: (theme) => theme.zIndex.drawer + 1
             }}>
-                <Toolbar variant="dense" sx={{ minHeight: 56, px: 2, display: 'flex', justifyContent: 'space-between' }}>
+                <Toolbar variant="dense" sx={{ minHeight: 72, px: 2, display: 'flex', justifyContent: 'space-between' }}>
 
                     {/* Left: Logo and Navigation Links */}
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <Typography variant="h6" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1, mr: 4, cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
-                            Metrics Platform
+                            <MetricsLogo sx={{ fontSize: 28, filter: 'drop-shadow(0 0 4px rgba(0,229,255,0.5))' }} />
+                            Metrics
                         </Typography>
 
                         <Box sx={{ display: 'flex', gap: 1 }}>
@@ -100,7 +102,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ onLogout }) => {
             </AppBar>
 
             {/* Main Content Area */}
-            <Box component="main" sx={{ flexGrow: 1, p: 3, pt: { xs: 8, sm: 9 } }}>
+            <Box component="main" sx={{ flexGrow: 1, p: 3, pt: { xs: 10, sm: 11 } }}>
                 <Outlet /> {/* Renders the active nested route */}
             </Box>
         </Box>

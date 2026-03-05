@@ -168,6 +168,10 @@ const Explorer: React.FC = () => {
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h5" sx={{ fontWeight: 600 }}>PromQL Explorer</Typography>
+            </Box>
+
             {/* Top Query Bar Area */}
             <Paper sx={{
                 p: 1.5,

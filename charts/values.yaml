@@ -11,8 +11,10 @@ frontend:
   tag: "v1"
   replicas: 1
 
+# External Prometheus (used when monitoring.enabled=false)
+# Set this to your existing Prometheus URL
 prometheus:
-  url: http://prometheus-server:9090
+  url: "http://prometheus-server:9090"
 
 persistence:
   enabled: true
@@ -29,6 +31,9 @@ serviceAccount:
   name: ""
 
 monitoring:
+  # Set to false if you already have Prometheus in your cluster
+  # When false, configure prometheus.url above to point to your existing Prometheus
+  enabled: true
   grafana:
     enabled: false            # our app IS the dashboard, no need for Grafana
   prometheus:

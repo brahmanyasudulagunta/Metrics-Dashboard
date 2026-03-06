@@ -3,7 +3,24 @@ entries:
   metrics:
   - apiVersion: v2
     appVersion: v1
-    created: "2026-03-06T11:30:44.889156323-06:00"
+    created: "2026-03-06T11:43:23.555692204-06:00"
+    dependencies:
+    - alias: monitoring
+      condition: monitoring.enabled
+      name: kube-prometheus-stack
+      repository: https://prometheus-community.github.io/helm-charts
+      version: 72.x
+    description: A Kubernetes-native monitoring dashboard with Prometheus metrics
+      and live cluster visibility
+    digest: 4c622f3ba5f7aac4dcd1718ab55385061aebcb5d6025eeeeccf71fb0a8a8c116
+    name: metrics
+    type: application
+    urls:
+    - metrics-0.2.7.tgz
+    version: 0.2.7
+  - apiVersion: v2
+    appVersion: v1
+    created: "2026-03-06T11:43:23.522250473-06:00"
     dependencies:
     - alias: monitoring
       condition: monitoring.enabled
@@ -16,11 +33,11 @@ entries:
     name: metrics
     type: application
     urls:
-    - https://brahmanyasudulagunta.github.io/Metrics/metrics-0.2.6.tgz
+    - metrics-0.2.6.tgz
     version: 0.2.6
   - apiVersion: v2
     appVersion: v1
-    created: "2026-03-06T11:30:44.848929956-06:00"
+    created: "2026-03-06T11:43:23.483396232-06:00"
     dependencies:
     - alias: monitoring
       condition: monitoring.enabled
@@ -33,11 +50,11 @@ entries:
     name: metrics
     type: application
     urls:
-    - https://brahmanyasudulagunta.github.io/Metrics/metrics-0.2.5.tgz
+    - metrics-0.2.5.tgz
     version: 0.2.5
   - apiVersion: v2
     appVersion: v1
-    created: "2026-03-06T11:30:44.808378219-06:00"
+    created: "2026-03-06T11:43:23.443698875-06:00"
     dependencies:
     - alias: monitoring
       condition: monitoring.enabled
@@ -50,11 +67,11 @@ entries:
     name: metrics
     type: application
     urls:
-    - https://brahmanyasudulagunta.github.io/Metrics/metrics-0.2.4.tgz
+    - metrics-0.2.4.tgz
     version: 0.2.4
   - apiVersion: v2
     appVersion: v1
-    created: "2026-03-06T11:30:44.771025748-06:00"
+    created: "2026-03-06T11:43:23.405832747-06:00"
     dependencies:
     - alias: monitoring
       condition: monitoring.enabled
@@ -67,11 +84,11 @@ entries:
     name: metrics
     type: application
     urls:
-    - https://brahmanyasudulagunta.github.io/Metrics/metrics-0.2.3.tgz
+    - metrics-0.2.3.tgz
     version: 0.2.3
   - apiVersion: v2
     appVersion: v1
-    created: "2026-03-06T11:30:44.728257836-06:00"
+    created: "2026-03-06T11:43:23.36846169-06:00"
     dependencies:
     - alias: monitoring
       condition: monitoring.enabled
@@ -84,11 +101,11 @@ entries:
     name: metrics
     type: application
     urls:
-    - https://brahmanyasudulagunta.github.io/Metrics/metrics-0.2.2.tgz
+    - metrics-0.2.2.tgz
     version: 0.2.2
   - apiVersion: v2
     appVersion: v1
-    created: "2026-03-06T11:30:44.683059255-06:00"
+    created: "2026-03-06T11:43:23.325991537-06:00"
     dependencies:
     - alias: monitoring
       name: kube-prometheus-stack
@@ -100,6 +117,6 @@ entries:
     name: metrics
     type: application
     urls:
-    - https://brahmanyasudulagunta.github.io/Metrics/metrics-0.2.1.tgz
+    - metrics-0.2.1.tgz
     version: 0.2.1
-generated: "2026-03-06T11:30:44.63346-06:00"
+generated: "2026-03-06T11:43:23.267374569-06:00"

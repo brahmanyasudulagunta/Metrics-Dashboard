@@ -3,7 +3,24 @@ entries:
   metrics:
   - apiVersion: v2
     appVersion: v1
-    created: "2026-03-05T20:01:09.441138881-06:00"
+    created: "2026-03-06T11:30:44.889156323-06:00"
+    dependencies:
+    - alias: monitoring
+      condition: monitoring.enabled
+      name: kube-prometheus-stack
+      repository: https://prometheus-community.github.io/helm-charts
+      version: 72.x
+    description: A Kubernetes-native monitoring dashboard with Prometheus metrics
+      and live cluster visibility
+    digest: 240be594d8176179dd1b7c805e9325d86478c47fc21c50d8952a7bd23781e160
+    name: metrics
+    type: application
+    urls:
+    - https://brahmanyasudulagunta.github.io/Metrics/metrics-0.2.6.tgz
+    version: 0.2.6
+  - apiVersion: v2
+    appVersion: v1
+    created: "2026-03-06T11:30:44.848929956-06:00"
     dependencies:
     - alias: monitoring
       condition: monitoring.enabled
@@ -20,7 +37,7 @@ entries:
     version: 0.2.5
   - apiVersion: v2
     appVersion: v1
-    created: "2026-03-05T20:01:09.40287227-06:00"
+    created: "2026-03-06T11:30:44.808378219-06:00"
     dependencies:
     - alias: monitoring
       condition: monitoring.enabled
@@ -37,7 +54,7 @@ entries:
     version: 0.2.4
   - apiVersion: v2
     appVersion: v1
-    created: "2026-03-05T20:01:09.360123758-06:00"
+    created: "2026-03-06T11:30:44.771025748-06:00"
     dependencies:
     - alias: monitoring
       condition: monitoring.enabled
@@ -54,7 +71,7 @@ entries:
     version: 0.2.3
   - apiVersion: v2
     appVersion: v1
-    created: "2026-03-05T20:01:09.317695389-06:00"
+    created: "2026-03-06T11:30:44.728257836-06:00"
     dependencies:
     - alias: monitoring
       condition: monitoring.enabled
@@ -71,7 +88,7 @@ entries:
     version: 0.2.2
   - apiVersion: v2
     appVersion: v1
-    created: "2026-03-05T20:01:09.280910668-06:00"
+    created: "2026-03-06T11:30:44.683059255-06:00"
     dependencies:
     - alias: monitoring
       name: kube-prometheus-stack
@@ -85,4 +102,4 @@ entries:
     urls:
     - https://brahmanyasudulagunta.github.io/Metrics/metrics-0.2.1.tgz
     version: 0.2.1
-generated: "2026-03-05T20:01:09.233832022-06:00"
+generated: "2026-03-06T11:30:44.63346-06:00"

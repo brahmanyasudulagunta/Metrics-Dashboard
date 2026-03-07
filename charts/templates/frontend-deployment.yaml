@@ -13,6 +13,11 @@ spec:
     metadata:
       labels:
         app: {{ .Release.Name }}-dashboard
+      annotations:
+        checksum/nginx-config: {{ include (print $.Template.BasePath "/nginx-configmap.yaml") . | sha256sum }}
+        # Adds a timestamp to always force a pod restart on 'helm upgrade' 
+        # so that imagePullPolicy: Always can fetch the latest image even if the tag didn't change.
+        rollme: {{ randAlphaNum 5 | quote }}
     spec:
       containers:
         - name: frontend

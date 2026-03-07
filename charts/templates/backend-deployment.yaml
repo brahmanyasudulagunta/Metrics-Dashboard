@@ -13,6 +13,12 @@ spec:
     metadata:
       labels:
         app: {{ .Release.Name }}-api
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        # Adds a timestamp to always force a pod restart on 'helm upgrade' 
+        # so that imagePullPolicy: Always can fetch the latest image even if the tag didn't change.
+        rollme: {{ randAlphaNum 5 | quote }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name | default (printf "%s-api" .Release.Name) }}
       containers:

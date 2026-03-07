@@ -12,6 +12,7 @@ docker push ashrith2727/backend-metrics:v3
 ## Scenario 2: You ONLY updated the Helm Chart files
 
 If you only changed Helm files (like adding a new Kubernetes Service, or modifying ConfigMaps), you do not need to rebuild Docker images. 
+*Note: We have added forced-restart annotations (`rollme`) to the Deployment templates. This ensures that even if you reuse the same Docker image tag (like `v3` repeatedly), Helm will still force the pods to restart and pull the fresh image during a `helm upgrade`.*
 
 ### Step 2.1: Proceed directly to "Updating the Helm Chart" below. 👇
 
@@ -68,6 +69,6 @@ git push origin main
 helm repo update metrics 
 
 # Upgrade the existing installation
-helm upgrade --install my-metrics metrics/metrics -n metrics --reset-values --set monitoring.enabled=false --set prometheus.url="http://monitoring-kube-prometheus-prometheus.monitoring:9090"
+helm upgrade --install metrics metrics/metrics -n metrics --reset-values --set monitoring.enabled=false --set prometheus.url="http://monitoring-kube-prometheus-prometheus.monitoring:9090"
 ```
 *(Remove the `--set` flags above if deploying into a fresh cluster that needs Prometheus auto-installed).*

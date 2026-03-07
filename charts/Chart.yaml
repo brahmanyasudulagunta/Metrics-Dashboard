@@ -3,8 +3,8 @@ apiVersion: v2
 name: metrics
 description: A Kubernetes-native monitoring dashboard with Prometheus metrics and live cluster visibility
 type: application
-version: 0.2.8
-appVersion: "v1"
+version: 0.2.9
+appVersion: "1.1.6"
 
 dependencies:
   - name: kube-prometheus-stack

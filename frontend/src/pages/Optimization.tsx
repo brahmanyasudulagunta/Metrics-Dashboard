@@ -76,10 +76,6 @@ const Optimization: React.FC = () => {
                 </Typography>
             </Box>
 
-            <Alert severity="info" sx={{ mb: 4, bgcolor: 'background.paper', color: 'text.primary' }}>
-                This tab analyzes memory requests for all kubernetes pods and compares them to actual average usage. It identifies over-provisioned pods to help you safely reduce your Kubernetes node size and save money.
-            </Alert>
-
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3, mb: 4 }}>
                 <Box>
                     <Paper sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 1, bgcolor: '#161b22' }}>

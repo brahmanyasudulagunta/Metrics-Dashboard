@@ -1,11 +1,13 @@
-{{- if and .Values.gateway.enabled .Values.monitoring.enabled }}
+{{- if .Values.gateway.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
   name: {{ .Release.Name }}-envoy
   labels:
-    release: {{ .Release.Name }}
+    release: {{ .Values.monitoring.releaseName | default "monitoring" }}
 spec:
+  namespaceSelector:
+    any: true
   selector:
     matchLabels:
       gateway.envoyproxy.io/owning-gateway-name: {{ .Release.Name }}-gateway

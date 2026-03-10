@@ -2,8 +2,5 @@ dependencies:
 - name: kube-prometheus-stack
   repository: https://prometheus-community.github.io/helm-charts
   version: 72.9.1
-- name: gateway-helm
-  repository: oci://docker.io/envoyproxy
-  version: 1.7.0
-digest: sha256:3d0799782bbf58544f00ad2cb9f60de6373034a05159b3633ea456350854ed40
-generated: "2026-03-10T09:47:51.443139911-05:00"
+digest: sha256:29967c4a8b79ee698f378bb08142d6856dc0e6d706220d43c96decbb7388bc61
+generated: "2026-03-10T11:12:50.946468619-05:00"

@@ -34,14 +34,9 @@ persistence:
   size: 1Gi
   storageClass: ""
 
-# Envoy Gateway control plane
-# Set to true to auto-install Envoy Gateway with this chart
-# Set to false if you already have Envoy Gateway in your cluster
-envoyGateway:
-  enabled: false
-
 # Gateway API resources (Gateway + HTTPRoute)
-# These create the Kubernetes routing resources for Envoy
+# Requires Envoy Gateway to be installed separately in the cluster
+# See README for prerequisites
 gateway:
   enabled: false
   host: metrics.example.com
@@ -63,6 +58,7 @@ monitoring:
   # Set to false if you already have Prometheus in your cluster
   # When false, configure prometheus.url above to point to your existing Prometheus
   enabled: true
+  releaseName: monitoring
   grafana:
     enabled: false            # our app IS the dashboard, no need for Grafana
   prometheus:

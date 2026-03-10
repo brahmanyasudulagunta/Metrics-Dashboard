@@ -34,10 +34,26 @@ persistence:
   size: 1Gi
   storageClass: ""
 
-ingress:
+# Envoy Gateway control plane
+# Set to true to auto-install Envoy Gateway with this chart
+# Set to false if you already have Envoy Gateway in your cluster
+envoyGateway:
+  enabled: false
+
+# Gateway API resources (Gateway + HTTPRoute)
+# These create the Kubernetes routing resources for Envoy
+gateway:
   enabled: false
   host: metrics.example.com
-  className: nginx
+  className: envoy
+  port: 80
+
+# App Health tab configuration
+appHealth:
+  # Set to false to completely hide the App Health tab metrics
+  enabled: true
+  # Which metrics provider to query (currently only "envoy" is supported)
+  provider: envoy
 
 serviceAccount:
   create: true

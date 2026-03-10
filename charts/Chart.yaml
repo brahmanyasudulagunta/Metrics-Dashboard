@@ -3,7 +3,7 @@ apiVersion: v2
 name: metrics
 description: A Kubernetes-native monitoring dashboard with Prometheus metrics and live cluster visibility
 type: application
-version: 0.1.0
+version: 0.1.1
 appVersion: "1.1.6"
 
 dependencies:
@@ -12,3 +12,9 @@ dependencies:
     repository: https://prometheus-community.github.io/helm-charts
     alias: monitoring
     condition: monitoring.enabled
+
+  - name: gateway-helm
+    version: "1.x"
+    repository: oci://docker.io/envoyproxy
+    alias: envoyGateway
+    condition: envoyGateway.enabled

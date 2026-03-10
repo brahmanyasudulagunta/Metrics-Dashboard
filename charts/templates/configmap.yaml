@@ -13,4 +13,5 @@ data:
   CORS_ORIGINS: "*"
   JWT_ALGORITHM: "HS256"
   DEV_MODE: {{ .Values.api.devMode | quote }}
+  APP_HEALTH_PROVIDER: {{ .Values.appHealth.provider | default "envoy" | quote }}
 

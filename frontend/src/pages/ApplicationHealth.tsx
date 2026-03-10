@@ -1,8 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, CircularProgress, Alert, Chip } from '@mui/material';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import axios from 'axios';
 import API_URL from '../config';
 import { tokens } from '../theme';
+
+interface APMStatus {
+    available: boolean;
+    provider: string;
+}
 
 interface APMSummary {
     rps: number;
@@ -12,7 +18,7 @@ interface APMSummary {
 }
 
 interface APMRoute {
-    ingress: string;
+    gateway: string;
     path: string;
     rps: number;
     errors: number;
@@ -29,6 +35,7 @@ const StatCard: React.FC<{ label: string; value: string | number; sub?: string; 
 );
 
 const ApplicationHealth: React.FC = () => {
+    const [status, setStatus] = useState<APMStatus | null>(null);
     const [summary, setSummary] = useState<APMSummary | null>(null);
     const [routes, setRoutes] = useState<APMRoute[]>([]);
     const [loading, setLoading] = useState(true);
@@ -41,6 +48,15 @@ const ApplicationHealth: React.FC = () => {
                 const token = localStorage.getItem('token');
                 const headers = { Authorization: `Bearer ${token}` };
 
+                // First check if Envoy metrics are available
+                const statusRes = await axios.get(`${API_URL}/api/metrics/apm/status`, { headers });
+                setStatus(statusRes.data);
+
+                if (!statusRes.data.available) {
+                    setLoading(false);
+                    return;
+                }
+
                 const [sumRes, routeRes] = await Promise.all([
                     axios.get(`${API_URL}/api/metrics/apm/summary`, { headers }),
                     axios.get(`${API_URL}/api/metrics/apm/routes`, { headers })
@@ -52,7 +68,7 @@ const ApplicationHealth: React.FC = () => {
                 setSummary(sumRes.data);
                 setRoutes(routeRes.data.routes || []);
             } catch (err: any) {
-                setError(err.message || 'Failed to fetch application metrics from NGINX Ingress.');
+                setError(err.message || 'Failed to fetch application metrics from Envoy Gateway.');
             } finally {
                 setLoading(false);
             }
@@ -69,15 +85,49 @@ const ApplicationHealth: React.FC = () => {
         return tokens.accent.green;
     };
 
-    if (loading && !summary) {
+    if (loading && !summary && !status) {
         return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>;
+    }
+
+    // Show "Not Configured" state when Envoy metrics are not detected
+    if (status && !status.available) {
+        return (
+            <Box>
+                <Typography variant="h5" sx={{ mb: 3 }}>Application Health (RED Metrics)</Typography>
+                <Paper sx={{ p: 4, textAlign: 'center' }}>
+                    <WarningAmberIcon sx={{ fontSize: 56, color: tokens.accent.yellow, mb: 2 }} />
+                    <Typography variant="h6" sx={{ mb: 1, color: tokens.text.primary }}>
+                        Envoy Gateway Not Detected
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: tokens.text.muted, mb: 3, maxWidth: 520, mx: 'auto' }}>
+                        The App Health tab requires Envoy Gateway to export Prometheus metrics.
+                        No <code>envoy_http_downstream_rq_total</code> metrics were found.
+                    </Typography>
+                    <Paper sx={{ p: 2, bgcolor: tokens.bg.base, maxWidth: 520, mx: 'auto', textAlign: 'left' }}>
+                        <Typography variant="subtitle2" sx={{ mb: 1 }}>To enable, upgrade your Helm release:</Typography>
+                        <Box component="pre" sx={{ fontFamily: 'monospace', fontSize: '0.8rem', color: tokens.accent.green, m: 0, whiteSpace: 'pre-wrap' }}>
+{`helm upgrade metrics metrics/metrics \\
+  --set envoyGateway.enabled=true \\
+  --set gateway.enabled=true`}
+                        </Box>
+                        <Typography variant="caption" sx={{ display: 'block', mt: 1.5, color: tokens.text.muted }}>
+                            If you already have Envoy Gateway installed, just enable the gateway resources:
+                        </Typography>
+                        <Box component="pre" sx={{ fontFamily: 'monospace', fontSize: '0.8rem', color: tokens.accent.blue, m: 0, mt: 0.5, whiteSpace: 'pre-wrap' }}>
+{`helm upgrade metrics metrics/metrics \\
+  --set gateway.enabled=true`}
+                        </Box>
+                    </Paper>
+                </Paper>
+            </Box>
+        );
     }
 
     return (
         <Box>
             <Typography variant="h5" sx={{ mb: 3 }}>Application Health (RED Metrics)</Typography>
             
-            {error && <Alert severity="warning" sx={{ mb: 3 }}>{error} <br/>(Note: This requires an active NGINX Ingress Controller exporting Prometheus metrics.)</Alert>}
+            {error && <Alert severity="warning" sx={{ mb: 3 }}>{error} <br/>(Note: This requires Envoy Gateway exporting Prometheus metrics.)</Alert>}
 
             {/* Global Summary Row */}
             <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap' }}>
@@ -107,7 +157,7 @@ const ApplicationHealth: React.FC = () => {
                 <Table>
                     <TableHead>
                         <TableRow>
-                            <TableCell>Ingress Route (Path)</TableCell>
+                            <TableCell>Gateway Route</TableCell>
                             <TableCell align="right">Req Rate (RPS)</TableCell>
                             <TableCell align="right">5xx Errors / sec</TableCell>
                             <TableCell align="right">Error Rate</TableCell>
@@ -128,10 +178,10 @@ const ApplicationHealth: React.FC = () => {
                                 <TableCell>
                                     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                                         <Typography sx={{ fontWeight: 600, color: tokens.text.primary, fontFamily: 'monospace' }}>
-                                            {route.path === '/' ? route.ingress : route.path}
+                                            {route.path}
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: tokens.text.muted }}>
-                                            Ingress: {route.ingress}
+                                            Gateway: {route.gateway}
                                         </Typography>
                                     </Box>
                                 </TableCell>

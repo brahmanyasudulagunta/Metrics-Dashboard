@@ -7,26 +7,36 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 client = PromClient()
 
+@router.get("/metrics/apm/status")
+def get_apm_status(current_user: str = Depends(get_current_user)):
+    """Check if Envoy Gateway metrics are available in Prometheus"""
+    try:
+        res = client.query('envoy_http_downstream_rq_total')
+        has_data = len(res.get("data", {}).get("result", [])) > 0
+        return {"available": has_data, "provider": "envoy"}
+    except Exception:
+        return {"available": False, "provider": "envoy"}
+
 @router.get("/metrics/apm/summary")
 def get_apm_summary(current_user: str = Depends(get_current_user)):
-    """Get high-level HTTP metrics (Total RPS, Global 5xx Rate, Global P95 Latency)"""
+    """Get high-level HTTP metrics (Total RPS, Global 5xx Rate, Global P95 Latency) from Envoy Gateway"""
     try:
         # Total Requests Per Second (RPS)
-        rps_query = 'sum(irate(nginx_ingress_controller_requests[2m]))'
+        rps_query = 'sum(irate(envoy_http_downstream_rq_total[2m]))'
         rps_res = client.query(rps_query)
         rps_results = rps_res.get("data", {}).get("result", [])
         rps = float(rps_results[0]["value"][1]) if rps_results else 0.0
 
         # Global 5xx Error Rate (%)
-        error_query = 'sum(irate(nginx_ingress_controller_requests{status=~"5.."}[2m])) / sum(irate(nginx_ingress_controller_requests[2m])) * 100'
+        error_query = 'sum(irate(envoy_http_downstream_rq_xx{envoy_response_code_class="5"}[2m])) / sum(irate(envoy_http_downstream_rq_total[2m])) * 100'
         err_res = client.query(error_query)
         err_results = err_res.get("data", {}).get("result", [])
         err_rate = float(err_results[0]["value"][1]) if err_results else 0.0
         if str(err_rate) == 'nan':
             err_rate = 0.0
 
-        # Global P95 Latency (seconds -> ms)
-        lat_query = 'histogram_quantile(0.95, sum(irate(nginx_ingress_controller_request_duration_seconds_bucket[2m])) by (le)) * 1000'
+        # Global P95 Latency (Envoy reports in ms natively)
+        lat_query = 'histogram_quantile(0.95, sum(irate(envoy_http_downstream_rq_time_bucket[2m])) by (le))'
         lat_res = client.query(lat_query)
         lat_results = lat_res.get("data", {}).get("result", [])
         latency_ms = float(lat_results[0]["value"][1]) if lat_results else 0.0
@@ -43,18 +53,18 @@ def get_apm_summary(current_user: str = Depends(get_current_user)):
 
 @router.get("/metrics/apm/routes")
 def get_apm_routes(current_user: str = Depends(get_current_user)):
-    """Get RED metrics broken down by Ingress route/path"""
+    """Get RED metrics broken down by Envoy Gateway route"""
     try:
         # 1. RPS per route
-        rps_q = 'sum(irate(nginx_ingress_controller_requests[2m])) by (ingress, path)'
+        rps_q = 'sum(irate(envoy_http_downstream_rq_total[2m])) by (envoy_http_conn_manager_prefix)'
         rps_res = client.query(rps_q)
 
         # 2. 5xx Errors per route
-        err_q = 'sum(irate(nginx_ingress_controller_requests{status=~"5.."}[2m])) by (ingress, path)'
+        err_q = 'sum(irate(envoy_http_downstream_rq_xx{envoy_response_code_class="5"}[2m])) by (envoy_http_conn_manager_prefix)'
         err_res = client.query(err_q)
 
-        # 3. P95 Latency per route
-        lat_q = 'histogram_quantile(0.95, sum(irate(nginx_ingress_controller_request_duration_seconds_bucket[2m])) by (le, ingress, path)) * 1000'
+        # 3. P95 Latency per route (Envoy reports in ms)
+        lat_q = 'histogram_quantile(0.95, sum(irate(envoy_http_downstream_rq_time_bucket[2m])) by (le, envoy_http_conn_manager_prefix))'
         lat_res = client.query(lat_q)
 
         routes_data = {}
@@ -62,11 +72,12 @@ def get_apm_routes(current_user: str = Depends(get_current_user)):
         # Parse RPS
         for res in rps_res.get("data", {}).get("result", []):
             metric = res.get("metric", {})
-            key = f"{metric.get('ingress', 'unknown')}::{metric.get('path', '/')}"
+            gateway_route = metric.get("envoy_http_conn_manager_prefix", "unknown")
+            key = gateway_route
             val = float(res.get("value", [0, 0])[1])
             routes_data[key] = {
-                "ingress": metric.get("ingress", "unknown"),
-                "path": metric.get("path", "/"),
+                "gateway": gateway_route,
+                "path": gateway_route,
                 "rps": round(val, 2),
                 "errors": 0.0,
                 "error_rate": 0.0,
@@ -76,7 +87,7 @@ def get_apm_routes(current_user: str = Depends(get_current_user)):
         # Parse Errors
         for res in err_res.get("data", {}).get("result", []):
             metric = res.get("metric", {})
-            key = f"{metric.get('ingress', 'unknown')}::{metric.get('path', '/')}"
+            key = metric.get("envoy_http_conn_manager_prefix", "unknown")
             val = float(res.get("value", [0, 0])[1])
             if key in routes_data:
                 routes_data[key]["errors"] = round(val, 2)
@@ -87,7 +98,7 @@ def get_apm_routes(current_user: str = Depends(get_current_user)):
         # Parse Latency
         for res in lat_res.get("data", {}).get("result", []):
             metric = res.get("metric", {})
-            key = f"{metric.get('ingress', 'unknown')}::{metric.get('path', '/')}"
+            key = metric.get("envoy_http_conn_manager_prefix", "unknown")
             val = float(res.get("value", [0, 0])[1])
             if str(val) != 'nan' and key in routes_data:
                 routes_data[key]["p95_ms"] = round(val, 2)

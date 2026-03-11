@@ -60,7 +60,10 @@ def get_pod_logs(
 
 
 @router.get("/metrics/events")
-def list_events(namespace: str = "all", current_user: str = Depends(get_current_user)):
+def list_events(
+    namespace: str = "all",
+    current_user: str = Depends(get_current_user)
+):
     data = k8s.get_events(namespace)
     if isinstance(data, dict) and "error" in data:
         raise HTTPException(status_code=500, detail=data["error"])

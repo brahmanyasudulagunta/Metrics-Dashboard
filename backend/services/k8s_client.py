@@ -138,6 +138,7 @@ class K8sClient:
     def get_events(self, namespace="default"):
         if not self.is_connected(): return {"error": "Native K8s client not configured."}
         try:
+            from datetime import datetime
             if namespace == "all":
                 events = self.core_api.list_event_for_all_namespaces()
             else:
@@ -154,6 +155,6 @@ class K8sClient:
                         "time": e.last_timestamp.isoformat() if e.last_timestamp else None
                     })
             result.sort(key=lambda x: x["time"] or "", reverse=True)
-            return result[:50]
+            return result[:100]
         except ApiException as e:
             return {"error": str(e)}

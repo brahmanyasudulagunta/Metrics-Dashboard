@@ -59,11 +59,12 @@ const Explorer: React.FC = () => {
         const headers = { Authorization: `Bearer ${token}` };
         const end = Math.floor(Date.now() / 1000);
         const start = end - 3600;
+        const step = '15s';
 
         try {
             const encodedQuery = encodeURIComponent(query);
             const res = await axios.get(
-                `${API_URL}/api/metrics/query_range_raw?query=${encodedQuery}&start=${start}&end=${end}&step=15s`,
+                `${API_URL}/api/metrics/query_range_raw?query=${encodedQuery}&start=${start}&end=${end}&step=${step}`,
                 { headers }
             );
 

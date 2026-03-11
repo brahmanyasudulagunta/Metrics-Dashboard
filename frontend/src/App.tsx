@@ -43,8 +43,8 @@ const App: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router>
-        <div className="App">
+        <Router>
+          <div className="App">
           <Routes>
             <Route path="/login" element={<Login setAuth={setIsAuthenticated} />} />
             <Route path="/change-password" element={<ChangePassword />} />

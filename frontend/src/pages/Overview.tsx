@@ -11,7 +11,7 @@ import API_URL from '../config';
 import { tokens } from '../theme';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-    ResponsiveContainer, ReferenceLine
+    ResponsiveContainer, ReferenceLine, ReferenceDot
 } from 'recharts';
 
 /* ── Types ── */
@@ -148,6 +148,7 @@ const Overview: React.FC = () => {
     const [diskData, setDiskData] = useState<MetricData[]>([]);
     const [rxData, setRxData] = useState<MetricData[]>([]);
     const [txData, setTxData] = useState<MetricData[]>([]);
+    const [events, setEvents] = useState<any[]>([]);
     const [systemInfo, setSystemInfo] = useState<SystemInfo>({
         uptime: 'Loading...', load1: 0, load5: 0, load15: 0,
         processesRunning: 0, processesBlocked: 0,
@@ -166,7 +167,7 @@ const Overview: React.FC = () => {
         const step = '15s';
 
         try {
-            const [cpuRes, memRes, diskRes, rxRes, txRes, uptimeRes, loadRes, procRes, tempRes] = await Promise.all([
+            const [cpuRes, memRes, diskRes, rxRes, txRes, uptimeRes, loadRes, procRes, tempRes, eventsRes] = await Promise.all([
                 axios.get(`${API_URL}/api/metrics/cpu?start=${start}&end=${end}&step=${step}`, { headers }),
                 axios.get(`${API_URL}/api/metrics/memory?start=${start}&end=${end}&step=${step}`, { headers }),
                 axios.get(`${API_URL}/api/metrics/disk?start=${start}&end=${end}&step=${step}`, { headers }),
@@ -176,9 +177,11 @@ const Overview: React.FC = () => {
                 axios.get(`${API_URL}/api/metrics/load`, { headers }),
                 axios.get(`${API_URL}/api/metrics/processes`, { headers }),
                 axios.get(`${API_URL}/api/metrics/temperature`, { headers }),
+                axios.get(`${API_URL}/api/metrics/events`, { headers }),
             ]);
             setCpuData(cpuRes.data); setMemData(memRes.data); setDiskData(diskRes.data);
             setRxData(rxRes.data); setTxData(txRes.data);
+            setEvents(eventsRes.data.events || []);
             setSystemInfo({
                 uptime: uptimeRes.data.uptime,
                 load1: loadRes.data.load1, load5: loadRes.data.load5, load15: loadRes.data.load15,
@@ -287,6 +290,19 @@ const Overview: React.FC = () => {
                             <Legend wrapperStyle={{ paddingTop: 10, fontSize: '0.75rem' }} />
                             <ReferenceLine y={THRESHOLDS.cpu.warning} stroke="rgba(255,152,0,0.25)" strokeDasharray="5 5" />
                             <ReferenceLine y={THRESHOLDS.cpu.critical} stroke="rgba(244,67,54,0.25)" strokeDasharray="5 5" />
+                            {events.filter(e => ["OOMKilled", "CrashLoopBackOff", "ScalingReplicaSet"].includes(e.reason)).slice(0, 15).map((e, i) => {
+                                const t = new Date(e.time);
+                                const timeStr = `${t.getHours().toString().padStart(2, '0')}:${t.getMinutes().toString().padStart(2, '0')}`;
+                                return (
+                                    <ReferenceLine 
+                                        key={i} 
+                                        x={timeStr} 
+                                        stroke="rgba(244,67,54,0.6)" 
+                                        strokeDasharray="3 3"
+                                        label={{ position: 'insideTopLeft', value: e.reason, fill: tokens.accent.red, fontSize: 10 }}
+                                    />
+                                );
+                            })}
                             <Area type="monotone" dataKey="value" name="CPU" stroke={tokens.chart.cpu} strokeWidth={1.5} fillOpacity={1} fill="url(#gCpu)" activeDot={{ r: 4, strokeWidth: 0 }} isAnimationActive={false} />
                         </AreaChart>
                     </ResponsiveContainer>
@@ -307,6 +323,19 @@ const Overview: React.FC = () => {
                             <Legend wrapperStyle={{ paddingTop: 10, fontSize: '0.75rem' }} />
                             <ReferenceLine y={THRESHOLDS.memory.warning} stroke="rgba(255,152,0,0.25)" strokeDasharray="5 5" />
                             <ReferenceLine y={THRESHOLDS.memory.critical} stroke="rgba(244,67,54,0.25)" strokeDasharray="5 5" />
+                            {events.filter(e => ["OOMKilled", "CrashLoopBackOff", "ScalingReplicaSet"].includes(e.reason)).slice(0, 15).map((e, i) => {
+                                const t = new Date(e.time);
+                                const timeStr = `${t.getHours().toString().padStart(2, '0')}:${t.getMinutes().toString().padStart(2, '0')}`;
+                                return (
+                                    <ReferenceLine 
+                                        key={i} 
+                                        x={timeStr} 
+                                        stroke="rgba(244,67,54,0.6)" 
+                                        strokeDasharray="3 3"
+                                        label={{ position: 'insideTopLeft', value: e.reason, fill: tokens.accent.red, fontSize: 10 }}
+                                    />
+                                );
+                            })}
                             <Area type="monotone" dataKey="value" name="Memory" stroke={tokens.chart.memory} strokeWidth={1.5} fillOpacity={1} fill="url(#gMem)" activeDot={{ r: 4, strokeWidth: 0 }} isAnimationActive={false} />
                         </AreaChart>
                     </ResponsiveContainer>

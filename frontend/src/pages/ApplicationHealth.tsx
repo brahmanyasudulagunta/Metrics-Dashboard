@@ -1,34 +1,43 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, CircularProgress, Alert, Chip } from '@mui/material';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, CircularProgress, Alert, Chip, Tooltip } from '@mui/material';
+import SpeedIcon from '@mui/icons-material/Speed';
+import HubIcon from '@mui/icons-material/Hub';
+import VerifiedIcon from '@mui/icons-material/Verified';
 import axios from 'axios';
 import API_URL from '../config';
 import { tokens } from '../theme';
 
 interface APMStatus {
     available: boolean;
-    provider: string;
+    providers: {
+        cadvisor: boolean;
+        envoy: boolean;
+    };
 }
 
 interface APMSummary {
     rps: number;
+    throughput_kbps: number;
     error_rate: number;
-    p95_latency_ms: number;
-    error?: string;
+    apps_monitored: number;
 }
 
 interface APMRoute {
-    gateway: string;
-    path: string;
-    rps: number;
-    errors: number;
+    name: string;
+    namespace: string;
+    status: string;
+    throughput_kbps: number;
+    rps: number | null;
     error_rate: number;
-    p95_ms: number;
+    has_premium: boolean;
 }
 
-const StatCard: React.FC<{ label: string; value: string | number; sub?: string; color: string }> = ({ label, value, sub, color }) => (
-    <Paper sx={{ p: 3, flex: '1 1 0', minWidth: 200, display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <Typography variant="subtitle2">{label}</Typography>
+const StatCard: React.FC<{ label: string; value: string | number; sub?: string; color: string; icon?: React.ReactNode }> = ({ label, value, sub, color, icon }) => (
+    <Paper sx={{ p: 3, flex: '1 1 0', minWidth: 200, display: 'flex', flexDirection: 'column', gap: 1, position: 'relative', overflow: 'hidden' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <Typography variant="subtitle2" sx={{ color: tokens.text.muted }}>{label}</Typography>
+            {icon && <Box sx={{ color: tokens.text.muted, opacity: 0.5 }}>{icon}</Box>}
+        </Box>
         <Typography variant="h4" sx={{ color, fontWeight: 700 }}>{value}</Typography>
         {sub && <Typography variant="caption" sx={{ color: tokens.text.muted }}>{sub}</Typography>}
     </Paper>
@@ -41,39 +50,29 @@ const ApplicationHealth: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
+    const fetchAPM = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const headers = { Authorization: `Bearer ${token}` };
+
+            const [statusRes, sumRes, routeRes] = await Promise.all([
+                axios.get(`${API_URL}/api/metrics/apm/status`, { headers }),
+                axios.get(`${API_URL}/api/metrics/apm/summary`, { headers }),
+                axios.get(`${API_URL}/api/metrics/apm/routes`, { headers })
+            ]);
+
+            setStatus(statusRes.data);
+            setSummary(sumRes.data);
+            setRoutes(routeRes.data.routes || []);
+            setError('');
+        } catch (err: any) {
+            setError(err.message || 'Failed to fetch application metrics.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchAPM = async () => {
-            setLoading(true);
-            try {
-                const token = localStorage.getItem('token');
-                const headers = { Authorization: `Bearer ${token}` };
-
-                // First check if Envoy metrics are available
-                const statusRes = await axios.get(`${API_URL}/api/metrics/apm/status`, { headers });
-                setStatus(statusRes.data);
-
-                if (!statusRes.data.available) {
-                    setLoading(false);
-                    return;
-                }
-
-                const [sumRes, routeRes] = await Promise.all([
-                    axios.get(`${API_URL}/api/metrics/apm/summary`, { headers }),
-                    axios.get(`${API_URL}/api/metrics/apm/routes`, { headers })
-                ]);
-
-                if (sumRes.data.error) throw new Error(sumRes.data.error);
-                if (routeRes.data.error) throw new Error(routeRes.data.error);
-
-                setSummary(sumRes.data);
-                setRoutes(routeRes.data.routes || []);
-            } catch (err: any) {
-                setError(err.message || 'Failed to fetch application metrics from Envoy Gateway.');
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchAPM();
         const interval = setInterval(fetchAPM, 15000);
         return () => clearInterval(interval);
@@ -89,123 +88,110 @@ const ApplicationHealth: React.FC = () => {
         return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>;
     }
 
-    // Show "Not Configured" state when Envoy metrics are not detected
-    if (status && !status.available) {
-        return (
-            <Box>
-                <Typography variant="h5" sx={{ mb: 3 }}>Application Health (RED Metrics)</Typography>
-                <Paper sx={{ p: 4, textAlign: 'center' }}>
-                    <WarningAmberIcon sx={{ fontSize: 56, color: tokens.accent.yellow, mb: 2 }} />
-                    <Typography variant="h6" sx={{ mb: 1, color: tokens.text.primary }}>
-                        Envoy Gateway Not Detected
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: tokens.text.muted, mb: 3, maxWidth: 520, mx: 'auto' }}>
-                        The App Health tab requires Envoy Gateway to export Prometheus metrics.
-                        No <code>envoy_http_downstream_rq_total</code> metrics were found.
-                    </Typography>
-                    <Paper sx={{ p: 2, bgcolor: tokens.bg.base, maxWidth: 520, mx: 'auto', textAlign: 'left' }}>
-                        <Typography variant="subtitle2" sx={{ mb: 1 }}>To enable, upgrade your Helm release:</Typography>
-                        <Box component="pre" sx={{ fontFamily: 'monospace', fontSize: '0.8rem', color: tokens.accent.green, m: 0, whiteSpace: 'pre-wrap' }}>
-                            {`helm upgrade metrics metrics/metrics \\
-  --set envoyGateway.enabled=true \\
-  --set gateway.enabled=true`}
-                        </Box>
-                        <Typography variant="caption" sx={{ display: 'block', mt: 1.5, color: tokens.text.muted }}>
-                            If you already have Envoy Gateway installed, just enable the gateway resources:
-                        </Typography>
-                        <Box component="pre" sx={{ fontFamily: 'monospace', fontSize: '0.8rem', color: tokens.accent.blue, m: 0, mt: 0.5, whiteSpace: 'pre-wrap' }}>
-                            {`helm upgrade metrics metrics/metrics \\
-  --set gateway.enabled=true`}
-                        </Box>
-                    </Paper>
-                </Paper>
-            </Box>
-        );
-    }
-
     return (
         <Box>
-            <Typography variant="h5" sx={{ mb: 3 }}>Application Health (RED Metrics)</Typography>
+            <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <Box>
+                    <Typography variant="h5" sx={{ fontWeight: 700 }}>Application Health</Typography>
+                    <Typography variant="body2" sx={{ color: tokens.text.muted }}>
+                        Auto-discovered cluster applications and live traffic performance
+                    </Typography>
+                </Box>
+                {status?.providers.envoy ? (
+                    <Chip 
+                        icon={<VerifiedIcon style={{ color: tokens.accent.blue }} />} 
+                        label="Envoy L7 Enabled" 
+                        size="small" 
+                        sx={{ bgcolor: 'rgba(56,139,253,0.1)', color: tokens.accent.blue, border: '1px solid rgba(56,139,253,0.2)' }} 
+                    />
+                ) : (
+                    <Chip label="Basic L4 Health" size="small" sx={{ opacity: 0.7 }} />
+                )}
+            </Box>
 
-            {error && <Alert severity="warning" sx={{ mb: 3 }}>{error} <br />(Note: This requires Envoy Gateway exporting Prometheus metrics.)</Alert>}
+            {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
             {/* Global Summary Row */}
             <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap' }}>
                 <StatCard
-                    label="Global Request Rate (RPS)"
+                    label="Active Apps"
+                    value={summary?.apps_monitored || 0}
+                    sub="Auto-discovered deployments"
+                    color={tokens.text.primary}
+                    icon={<HubIcon />}
+                />
+                <StatCard
+                    label="Cluster Throughput"
+                    value={`${summary?.throughput_kbps || 0} kB/s`}
+                    sub="Total L4 network activity"
+                    color={tokens.accent.blue}
+                    icon={<SpeedIcon />}
+                />
+                <StatCard
+                    label="Global Request Rate"
                     value={summary?.rps || 0}
-                    sub="Reqs per second across all routes"
+                    sub="L7 Reqs/sec (via Envoy)"
                     color={tokens.text.primary}
                 />
                 <StatCard
-                    label="Global 5xx Error Rate"
+                    label="Global Error Rate"
                     value={`${summary?.error_rate || 0}%`}
-                    sub="Percentage of requests returning 5xx status"
+                    sub="L7 5xx failures"
                     color={getHealthColor(summary?.error_rate || 0)}
-                />
-                <StatCard
-                    label="Global P95 Latency"
-                    value={`${summary?.p95_latency_ms || 0} ms`}
-                    sub="95% of requests are faster than this"
-                    color={summary?.p95_latency_ms && summary.p95_latency_ms > 1000 ? tokens.accent.yellow : tokens.accent.blue}
                 />
             </Box>
 
-            {/* Route Detail Table */}
-            <Typography variant="subtitle2" sx={{ mb: 2 }}>Route Performance Details (Last 2 minutes)</Typography>
-            <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
+            {/* Application List Table */}
+            <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>Cluster Applications (Last 2m)</Typography>
+            <TableContainer component={Paper} sx={{ borderRadius: '8px', border: `1px solid ${tokens.border.default}` }}>
                 <Table>
-                    <TableHead>
+                    <TableHead sx={{ bgcolor: tokens.bg.surface }}>
                         <TableRow>
-                            <TableCell>Gateway Route</TableCell>
-                            <TableCell align="right">Req Rate (RPS)</TableCell>
-                            <TableCell align="right">5xx Errors / sec</TableCell>
+                            <TableCell>Application</TableCell>
+                            <TableCell>Namespace</TableCell>
+                            <TableCell align="center">Pod Status</TableCell>
+                            <TableCell align="right">Throughput</TableCell>
+                            <TableCell align="right">RPS (L7)</TableCell>
                             <TableCell align="right">Error Rate</TableCell>
-                            <TableCell align="right">P95 Latency</TableCell>
-                            <TableCell align="center">Health</TableCell>
+                            <TableCell align="center">Mode</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {routes.length === 0 && !loading && (
                             <TableRow>
-                                <TableCell colSpan={6} align="center" sx={{ py: 6, color: tokens.text.muted }}>
-                                    No active HTTP traffic detected in the last 2 minutes.
+                                <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+                                    <Typography sx={{ color: tokens.text.muted }}>No applications discovered yet.</Typography>
                                 </TableCell>
                             </TableRow>
                         )}
-                        {routes.map((route, i) => (
+                        {routes.map((app, i) => (
                             <TableRow key={i} hover>
+                                <TableCell sx={{ fontWeight: 600, color: tokens.text.primary }}>{app.name}</TableCell>
                                 <TableCell>
-                                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                        <Typography sx={{ fontWeight: 600, color: tokens.text.primary, fontFamily: 'monospace' }}>
-                                            {route.path}
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ color: tokens.text.muted }}>
-                                            Gateway: {route.gateway}
-                                        </Typography>
-                                    </Box>
-                                </TableCell>
-                                <TableCell align="right" sx={{ fontFamily: 'monospace' }}>{route.rps}</TableCell>
-                                <TableCell align="right" sx={{ fontFamily: 'monospace', color: route.errors > 0 ? tokens.accent.red : 'inherit' }}>
-                                    {route.errors}
-                                </TableCell>
-                                <TableCell align="right" sx={{ fontFamily: 'monospace', color: getHealthColor(route.error_rate) }}>
-                                    {route.error_rate}%
-                                </TableCell>
-                                <TableCell align="right" sx={{ fontFamily: 'monospace' }}>
-                                    {route.p95_ms} ms
+                                    <Chip label={app.namespace} size="small" sx={{ fontSize: '0.7rem', height: 20, bgcolor: tokens.bg.surface }} />
                                 </TableCell>
                                 <TableCell align="center">
-                                    <Chip
-                                        size="small"
-                                        label={route.error_rate >= 5 ? 'Critical' : (route.error_rate > 0 ? 'Degraded' : 'Healthy')}
-                                        sx={{
-                                            bgcolor: `rgba(${route.error_rate >= 5 ? '218,54,51' : (route.error_rate > 0 ? '210,153,34' : '35,134,54')}, 0.15)`,
-                                            color: getHealthColor(route.error_rate),
-                                            fontWeight: 700,
-                                            border: `1px solid rgba(${route.error_rate >= 5 ? '218,54,51' : (route.error_rate > 0 ? '210,153,34' : '35,134,54')}, 0.3)`
-                                        }}
-                                    />
+                                    <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: app.status.startsWith(app.status.split('/')[1]) ? tokens.accent.green : tokens.accent.yellow }}>
+                                        {app.status}
+                                    </Typography>
+                                </TableCell>
+                                <TableCell align="right" sx={{ fontFamily: 'monospace' }}>{app.throughput_kbps} kB/s</TableCell>
+                                <TableCell align="right" sx={{ fontFamily: 'monospace' }}>
+                                    {app.rps !== null ? app.rps : <Typography variant="caption" sx={{ color: tokens.text.muted }}>N/A</Typography>}
+                                </TableCell>
+                                <TableCell align="right" sx={{ fontFamily: 'monospace', color: getHealthColor(app.error_rate) }}>
+                                    {app.rps !== null ? `${app.error_rate}%` : '—'}
+                                </TableCell>
+                                <TableCell align="center">
+                                    {app.has_premium ? (
+                                        <Tooltip title="L7 API Performance Metrics (via Envoy)">
+                                            <VerifiedIcon sx={{ fontSize: 18, color: tokens.accent.blue }} />
+                                        </Tooltip>
+                                    ) : (
+                                        <Tooltip title="Basic L4 Network Throughput (Auto-discovered)">
+                                            <HubIcon sx={{ fontSize: 18, color: tokens.text.muted, opacity: 0.5 }} />
+                                        </Tooltip>
+                                    )}
                                 </TableCell>
                             </TableRow>
                         ))}

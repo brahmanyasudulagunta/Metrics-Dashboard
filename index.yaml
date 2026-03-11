@@ -3,7 +3,7 @@ entries:
   metrics:
   - apiVersion: v2
     appVersion: 1.1.6
-    created: "2026-03-11T12:25:39.547040239-05:00"
+    created: "2026-03-11T12:36:32.79147234-05:00"
     dependencies:
     - alias: monitoring
       condition: monitoring.enabled
@@ -12,10 +12,10 @@ entries:
       version: 72.x
     description: A Kubernetes-native monitoring dashboard with Prometheus metrics
       and live cluster visibility
-    digest: 72514f7e795f3794a7225df40bd79d62d30ee2b7466cccd4f5b6ff6f4b04eea4
+    digest: 368723a8f148607240d97caf92f17e6a75c6f37e28b5e3b6833b02b07bd0ba82
     name: metrics
     type: application
     urls:
-    - https://brahmanyasudulagunta.github.io/Metrics/metrics-0.1.3.tgz
-    version: 0.1.3
-generated: "2026-03-11T12:25:39.498543588-05:00"
+    - https://brahmanyasudulagunta.github.io/Metrics/metrics-0.1.0.tgz
+    version: 0.1.0
+generated: "2026-03-11T12:36:32.747035241-05:00"

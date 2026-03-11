@@ -4,29 +4,40 @@ A Kubernetes-native monitoring dashboard that provides real-time visibility into
 
 ---
 
-## Quick Start (Local Installation)
+## Installation
 
-If you are developing locally (e.g., using Kind or Minikube), follow these steps to get the full experience.
+You can install the Metrics Dashboard directly from the official Helm repository.
 
-
-### 2. Install the Dashboard
-We recommend starting fresh in a dedicated namespace.
+### 1. Add the Helm Repository
 
 ```bash
-# 1. Create the namespace
+helm repo add metrics https://brahmanyasudulagunta.github.io/Metrics/
+helm repo update
 kubectl create namespace metrics
+```
 
-# 2. Update local dependencies
-helm dependency update ./charts
+### 2. Deploy the Dashboard
 
-# 3. Install the chart (pointing to your existing Prometheus)
-helm upgrade --install metrics ./charts \
+Choose the scenario that fits your cluster:
+
+#### Scenario A: You already have Prometheus installed
+If you are already running Prometheus (like the `kube-prometheus-stack`) in your cluster, point the dashboard to it.
+
+```bash
+helm upgrade --install metrics metrics/metrics \
   -n metrics \
   --set monitoring.enabled=false \
-  --set monitoring.releaseName=monitoring \
-  --set prometheus.url="http://monitoring-kube-prometheus-prometheus.monitoring:9090" \
-  --set gateway.enabled=true
+  --set prometheus.url="http://prometheus-operated.monitoring:9090" # Replace with your Prometheus service URL
 ```
+
+#### Scenario B: You do NOT have Prometheus installed
+If you have a fresh cluster, the chart can automatically install a pre-configured Prometheus stack for you.
+
+```bash
+helm upgrade --install metrics metrics/metrics \
+  -n metrics
+```
+*(By default, this will install the dashboard alongside a bundled `kube-prometheus-stack`)*
 
 ---
 

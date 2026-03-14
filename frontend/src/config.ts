@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || '';
+const API_URL = '';
+console.log('Using API_URL:', API_URL || '(relative)');
 export default API_URL;
 
 // Global axios interceptor: auto-logout on 401 (expired/invalid token)

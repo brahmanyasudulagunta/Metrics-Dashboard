@@ -28,14 +28,21 @@ helm upgrade --install metrics ./charts \
   --namespace metrics \
   --create-namespace \
   --set monitoring.enabled=true \
-  --set prometheus.url="http://prometheus-server:9090"
+  --set prometheus.url="http://prometheus-server:9090" \
+  --set clusterName="gitops"
 ```
 
 ## 4. Verification
 ```bash
-# Check if pods are running
-kubectl get pods -n metrics
+## 5. Troubleshooting: "Connection Refused"
+If the browser console shows `ERR_CONNECTION_REFUSED` to `localhost:8000`:
+1.  **Rebuild**: Ensure you have pushed the latest version of the frontend image. The `API_URL` is baked into the JS at build time.
+2.  **Relative Path**: Ensure `src/config.ts` has `const API_URL = '';` (this forces the browser to hit Nginx instead of the backend directly).
+3.  **Port Forward**: Ensure you are accessing the dashboard on the correct port (usually `3001` or `3002`).
 
-# Forward the frontend port (if not using Ingress)
-kubectl port-forward svc/metrics-dashboard 3000:3001 -n metrics
+```bash
+# Force rebuild and re-deploy
+docker build -t ashrith2727/frontend-metrics:v1 ./frontend
+docker push ashrith2727/frontend-metrics:v1
+kubectl rollout restart deployment metrics-dashboard -n metrics
 ```

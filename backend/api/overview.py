@@ -136,3 +136,7 @@ def system_temperature(current_user: str = Depends(get_current_user)):
         return {"value": 0, "status": "No Sensors", "available": False}
     except Exception as e:
         return {"value": 0, "status": "Error", "available": False, "details": str(e)}
+@router.get("/metrics/system")
+def system_check(current_user: str = Depends(get_current_user)):
+    """Simple endpoint for token validation"""
+    return {"status": "ok", "message": "System authenticated"}

@@ -4,7 +4,7 @@ metadata:
   name: {{ .Release.Name }}-k8s-reader
 rules:
   - apiGroups: [""]
-    resources: ["namespaces", "pods", "services", "events"]
+    resources: ["namespaces", "pods", "services", "events", "nodes"]
     verbs: ["get", "list", "watch"]
   - apiGroups: [""]
     resources: ["pods/log"]

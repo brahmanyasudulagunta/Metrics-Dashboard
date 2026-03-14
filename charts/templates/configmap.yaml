@@ -13,4 +13,5 @@ data:
   CORS_ORIGINS: "*"
   JWT_ALGORITHM: "HS256"
   DEV_MODE: {{ .Values.api.devMode | quote }}
+  CLUSTER_NAME: {{ .Values.clusterName | default "in-cluster" | quote }}
 

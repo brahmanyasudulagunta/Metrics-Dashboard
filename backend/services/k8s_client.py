@@ -152,7 +152,8 @@ class K8sClient:
                 })
             
             if not result:
-                return [{"id": "in-cluster", "name": "in-cluster", "status": "Active", "provider": "Kubernetes"}]
+                cluster_name = os.getenv("CLUSTER_NAME", "in-cluster")
+                return [{"id": "in-cluster", "name": cluster_name, "status": "Active", "provider": "Kubernetes"}]
             
             # Sort by status (Active first) then by name
             result.sort(key=lambda x: (x['status'] != 'Active', x['name']))

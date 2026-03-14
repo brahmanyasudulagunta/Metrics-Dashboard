@@ -12,12 +12,12 @@ api:
     limits:
       memory: 512Mi
   dockerSocket:
-    enabled: true
+    enabled: false
     path: /var/run/docker.sock
   hostBinaryMounts:
-    enabled: true
+    enabled: false
     kindPath: /usr/local/bin/kind
-    kubectlPath: /usr/local/bin/kubectl
+    kubectlPath: /usr/bin/kubectl
     dockerPath: /usr/bin/docker
 
 dashboard:
@@ -75,3 +75,5 @@ monitoring:
       enabled: false          # don't bind to host port — prevents scheduling conflicts
   kubeStateMetrics:
     enabled: true
+
+clusterName: "gitops"

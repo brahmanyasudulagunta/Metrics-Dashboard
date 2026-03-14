@@ -110,7 +110,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ onLogout }) => {
 
                         {!isMobile && (
                             <MuiTooltip title="Help">
-                                <IconButton size="small" sx={{ color: '#8b949e' }}>
+                                <IconButton 
+                                    size="small" 
+                                    sx={{ color: '#8b949e' }}
+                                    onClick={() => window.open('https://kubernetes.io/docs/home/', '_blank')}
+                                >
                                     <HelpOutlineIcon fontSize="small" />
                                 </IconButton>
                             </MuiTooltip>

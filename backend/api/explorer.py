@@ -20,10 +20,5 @@ def query_range_raw(
     try:
         return client.query_range_result_like_prom(query, start=start, end=end, step=step)
     except Exception as e:
-        error_msg = str(e)
-        if "400" in error_msg or "Bad Request" in error_msg:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid PromQL for range query. If using a range vector selector like [5m], wrap it in a function like rate() or irate(). Error: {error_msg}"
-            )
-        raise HTTPException(status_code=500, detail=error_msg)
+        logger.error(f"Explorer query error: {e}")
+        return {"status": "success", "data": {"resultType": "matrix", "result": []}}

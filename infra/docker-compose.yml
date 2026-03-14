@@ -45,8 +45,12 @@ services:
       - default
       - kind
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ~/.kube:/root/.kube:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/local/bin/kind:/usr/local/bin/kind:ro
+      - /usr/local/bin/kubectl:/usr/local/bin/kubectl:ro
+      - /usr/bin/docker:/usr/bin/docker:ro
+      - ~/.kube:/root/.kube
+      - ../backend:/app
       - backend-data:/app/data
     env_file:
       - ../backend/.env
@@ -67,6 +71,7 @@ services:
 
 volumes:
   backend-data:
+
 
 networks:
   default:

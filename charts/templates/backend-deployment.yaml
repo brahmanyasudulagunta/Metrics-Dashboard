@@ -48,14 +48,52 @@ spec:
               port: 8000
             initialDelaySeconds: 5
             periodSeconds: 10
-          {{- if .Values.persistence.enabled }}
+          {{- if or .Values.persistence.enabled .Values.api.dockerSocket.enabled .Values.api.hostBinaryMounts.enabled }}
           volumeMounts:
+            {{- if .Values.persistence.enabled }}
             - name: data
               mountPath: /app/data
+            {{- end }}
+            {{- if .Values.api.dockerSocket.enabled }}
+            - name: docker-socket
+              mountPath: {{ .Values.api.dockerSocket.path }}
+            {{- end }}
+            {{- if .Values.api.hostBinaryMounts.enabled }}
+            - name: kind-bin
+              mountPath: /usr/local/bin/kind
+              readOnly: true
+            - name: kubectl-bin
+              mountPath: /usr/local/bin/kubectl
+              readOnly: true
+            - name: docker-bin
+              mountPath: /usr/bin/docker
+              readOnly: true
+            {{- end }}
           {{- end }}
-      {{- if .Values.persistence.enabled }}
+      {{- if or .Values.persistence.enabled .Values.api.dockerSocket.enabled .Values.api.hostBinaryMounts.enabled }}
       volumes:
+        {{- if .Values.persistence.enabled }}
         - name: data
           persistentVolumeClaim:
             claimName: {{ .Release.Name }}-data
-      {{- end }}
+        {{- end }}
+        {{- if .Values.api.dockerSocket.enabled }}
+        - name: docker-socket
+          hostPath:
+            path: {{ .Values.api.dockerSocket.path }}
+            type: Socket
+        {{- end }}
+        {{- if .Values.api.hostBinaryMounts.enabled }}
+        - name: kind-bin
+          hostPath:
+            path: {{ .Values.api.hostBinaryMounts.kindPath }}
+            type: File
+        - name: kubectl-bin
+          hostPath:
+            path: {{ .Values.api.hostBinaryMounts.kubectlPath }}
+            type: File
+        - name: docker-bin
+          hostPath:
+            path: {{ .Values.api.hostBinaryMounts.dockerPath }}
+            type: File
+        {{- end }}

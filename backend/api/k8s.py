@@ -15,6 +15,24 @@ router = APIRouter()
 k8s = K8sClient()
 
 
+class CreateNamespaceRequest(BaseModel):
+    name: str
+
+@router.get("/metrics/clusters")
+def list_clusters(current_user: str = Depends(get_current_user)):
+    data = k8s.get_clusters()
+    if isinstance(data, dict) and "error" in data:
+        raise HTTPException(status_code=500, detail=data["error"])
+    return {"clusters": data}
+
+@router.get("/metrics/nodes")
+def list_nodes(current_user: str = Depends(get_current_user)):
+    data = k8s.get_nodes()
+    if isinstance(data, dict) and "error" in data:
+        raise HTTPException(status_code=500, detail=data["error"])
+    return {"nodes": data}
+
+
 @router.get("/metrics/namespaces")
 def list_namespaces(current_user: str = Depends(get_current_user)):
     logger.info("Entering list_namespaces endpoint")
@@ -23,6 +41,20 @@ def list_namespaces(current_user: str = Depends(get_current_user)):
     if isinstance(data, dict) and "error" in data:
         raise HTTPException(status_code=500, detail=data["error"])
     return {"namespaces": data}
+
+@router.post("/metrics/namespaces")
+def create_namespace(req: CreateNamespaceRequest, current_user: str = Depends(get_current_user)):
+    data = k8s.create_namespace(req.name)
+    if isinstance(data, dict) and "error" in data:
+        raise HTTPException(status_code=500, detail=data["error"])
+    return data
+
+@router.delete("/metrics/namespaces/{name}")
+def delete_namespace(name: str, current_user: str = Depends(get_current_user)):
+    data = k8s.delete_namespace(name)
+    if isinstance(data, dict) and "error" in data:
+        raise HTTPException(status_code=500, detail=data["error"])
+    return data
 
 @router.get("/metrics/pods")
 def list_pods(namespace: str = "all", current_user: str = Depends(get_current_user)):
@@ -68,3 +100,34 @@ def list_events(
     if isinstance(data, dict) and "error" in data:
         raise HTTPException(status_code=500, detail=data["error"])
     return {"events": data}
+
+class ScaleRequest(BaseModel):
+    replicas: int
+
+@router.delete("/metrics/pods/{namespace}/{pod_name}")
+def delete_pod(namespace: str, pod_name: str, current_user: str = Depends(get_current_user)):
+    data = k8s.delete_pod(pod_name, namespace)
+    if isinstance(data, dict) and "error" in data:
+        raise HTTPException(status_code=500, detail=data["error"])
+    return data
+
+@router.post("/metrics/deployments/{namespace}/{deployment_name}/restart")
+def restart_deployment(namespace: str, deployment_name: str, current_user: str = Depends(get_current_user)):
+    data = k8s.restart_deployment(deployment_name, namespace)
+    if isinstance(data, dict) and "error" in data:
+        raise HTTPException(status_code=500, detail=data["error"])
+    return data
+
+@router.post("/metrics/deployments/{namespace}/{deployment_name}/scale")
+def scale_deployment(namespace: str, deployment_name: str, req: ScaleRequest, current_user: str = Depends(get_current_user)):
+    data = k8s.scale_deployment(deployment_name, req.replicas, namespace)
+    if isinstance(data, dict) and "error" in data:
+        raise HTTPException(status_code=500, detail=data["error"])
+    return data
+
+@router.get("/metrics/pods/{namespace}/{pod_name}/details")
+def get_pod_details(namespace: str, pod_name: str, current_user: str = Depends(get_current_user)):
+    data = k8s.get_pod_details(pod_name, namespace)
+    if isinstance(data, dict) and "error" in data:
+        raise HTTPException(status_code=500, detail=data["error"])
+    return data
